@@ -343,10 +343,13 @@ function loadSprite(src,slot){ const im=new Image();
   im.onload=()=>{ SPR[slot]=im; SPR[slot+'W']=im.width/im.height; refreshRings(); }; im.src=src; }
 function refreshRings(){
   const rh=document.getElementById('ringHero'), rb=document.getElementById('ringBoss');
+  if(!SPR.her&&rh&&!rh.textContent)rh.textContent='👩';
+  if(!SPR.him&&rb&&!rb.textContent)rb.textContent='👨';
+  if(SPR.her&&rh)rh.textContent=''; if(SPR.him&&rb)rb.textContent='';
   if(SPR.her&&rh)rh.style.backgroundImage='url('+SPR.her.src+')';
   if(SPR.him&&rb)rb.style.backgroundImage='url('+SPR.him.src+')'; }
-loadSprite(ls.get(K.hero,null)||SPR_HER,'her');
-loadSprite(ls.get(K.boss,null)||SPR_HIM,'him');
+if(ls.get(K.hero,null)||SPR_HER)loadSprite(ls.get(K.hero,null)||SPR_HER,'her'); else refreshRings();
+if(ls.get(K.boss,null)||SPR_HIM)loadSprite(ls.get(K.boss,null)||SPR_HIM,'him'); else refreshRings();
 function handleFile(input,key,slot){ const f=input.files&&input.files[0]; if(!f)return;
   const fr=new FileReader(); fr.onload=()=>{ const im=new Image(); im.onload=()=>{
     const H=128, w=Math.max(1,Math.round(im.width*H/im.height));
@@ -363,7 +366,8 @@ const W=cv.width, H=cv.height;
 
 /* Dibuja un avatar: (cx, baseY) = centro-abajo; h = alto en px */
 function drawAvatar(slot,cx,baseY,h,flip,sx,sy,alpha){
-  const img=SPR[slot]; if(!img)return;
+  const img=SPR[slot];
+  if(!img){ drawFallback(slot,cx,baseY,h,flip,sx,sy,alpha); return; }
   const w=h*SPR[slot+'W'];
   ctx.save();
   if(alpha!=null)ctx.globalAlpha=alpha;
@@ -372,7 +376,35 @@ function drawAvatar(slot,cx,baseY,h,flip,sx,sy,alpha){
   ctx.drawImage(img,-w/2,-h,w,h);
   ctx.restore();
 }
-function avatarW(slot,h){ return h*SPR[slot+'W']; }
+
+/* Silueta genérica si aún no hay sprite cargado */
+function drawFallback(slot,cx,baseY,h,flip,sx,sy,alpha){
+  const her=(slot==='her');
+  const w=h*0.55;
+  ctx.save();
+  if(alpha!=null)ctx.globalAlpha=alpha;
+  ctx.translate(cx,baseY); ctx.scale((flip?-1:1)*(sx||1),(sy||1));
+  const body=her?'#6b3f26':'#1b2330', hair=her?'#3b2415':'#14181f';
+  const skin='#f0c9a0';
+  // piernas
+  ctx.fillStyle=her?'#252c36':'#12161d';
+  rr(-w*0.30,-h*0.34,w*0.24,h*0.34,w*0.09); ctx.fill();
+  rr(w*0.06,-h*0.34,w*0.24,h*0.34,w*0.09); ctx.fill();
+  // torso
+  ctx.fillStyle=body; rr(-w*0.42,-h*0.68,w*0.84,h*0.38,w*0.16); ctx.fill();
+  ctx.fillStyle=her?'#efe7dc':'#1e5fa8'; rr(-w*0.12,-h*0.66,w*0.24,h*0.30,w*0.06); ctx.fill();
+  // cabeza
+  ctx.fillStyle=skin; ctx.beginPath(); ctx.arc(0,-h*0.79,h*0.155,0,7); ctx.fill();
+  ctx.fillStyle=hair;
+  if(her){ ctx.beginPath(); ctx.ellipse(0,-h*0.80,h*0.21,h*0.20,0,Math.PI,0); ctx.fill();
+    rr(-h*0.20,-h*0.82,h*0.09,h*0.26,h*0.045); ctx.fill();
+    rr(h*0.11,-h*0.82,h*0.09,h*0.26,h*0.045); ctx.fill(); }
+  else { ctx.beginPath(); ctx.arc(0,-h*0.82,h*0.16,Math.PI,0); ctx.fill(); }
+  ctx.fillStyle='#1a1410';
+  ctx.fillRect(-h*0.07,-h*0.80,h*0.03,h*0.035); ctx.fillRect(h*0.04,-h*0.80,h*0.03,h*0.035);
+  ctx.restore(); ctx.globalAlpha=1;
+}
+function avatarW(slot,h){ return SPR[slot]?h*SPR[slot+'W']:h*0.55; }
 
 /* ---------- Estado global ---------- */
 let state="menu";           // menu | play | peni | win | over | pause | edit | kiss
