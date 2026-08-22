@@ -502,6 +502,8 @@ document.getElementById('saveBtn').onclick=()=>{
 document.getElementById('cancelBtn').onclick=()=>{ show('startScreen'); state="start"; };
 
 // ---------- Loop ----------
+// Inicializa el mundo antes del primer frame (evita dibujar con estado vacío)
+barrels = []; spawnTimer = 0; invuln = 0; resetPlayer(); updateHud();
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
 loop();
 
