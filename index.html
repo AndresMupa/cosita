@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Barriles del Amor 🛢️❤️</title>
+<style>
+  :root{
+    --bg1:#1a1030; --bg2:#3a1a4a; --accent:#ff5277; --accent2:#ffd166;
+    --steel:#8a6d3b; --panel:#22143a;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif;
+    background:radial-gradient(circle at 50% 0%,var(--bg2),var(--bg1) 70%);
+    color:#fff; display:flex; flex-direction:column; align-items:center;
+    justify-content:flex-start; min-height:100%; overflow:hidden; touch-action:none;
+    user-select:none;
+  }
+  h1{
+    margin:8px 0 2px; font-size:clamp(18px,5vw,30px);
+    text-shadow:0 2px 0 #0006; letter-spacing:.5px;
+  }
+  .sub{font-size:12px; opacity:.75; margin-bottom:6px;}
+  #hud{
+    display:flex; gap:14px; font-size:15px; font-weight:bold; margin-bottom:4px;
+  }
+  #hud span{background:var(--panel); padding:4px 12px; border-radius:20px; box-shadow:0 2px 6px #0005;}
+  #stage{position:relative;}
+  canvas{
+    background:linear-gradient(180deg,#2a1740,#160a26);
+    border:4px solid var(--accent); border-radius:12px;
+    box-shadow:0 10px 30px #000a; display:block; max-width:96vw; height:auto;
+    touch-action:none;
+  }
+  /* Overlays */
+  .overlay{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    background:rgba(15,6,30,.9); border-radius:10px; padding:18px; gap:10px;
+  }
+  .hidden{display:none !important;}
+  .overlay h2{margin:0; font-size:clamp(20px,6vw,34px); color:var(--accent2); text-shadow:0 2px 0 #0007;}
+  .overlay p{margin:0; max-width:340px; line-height:1.35; font-size:15px;}
+  .peni{
+    background:linear-gradient(135deg,#ff5277,#ff9a3c);
+    color:#2a0a15; font-weight:bold; padding:16px 18px; border-radius:14px;
+    font-size:clamp(16px,4.5vw,20px); box-shadow:0 6px 18px #ff527755;
+    max-width:340px; line-height:1.35; animation:pop .4s ease;
+  }
+  @keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+  .btn{
+    background:var(--accent); color:#fff; border:none; font-weight:bold;
+    padding:12px 26px; border-radius:30px; font-size:17px; cursor:pointer;
+    box-shadow:0 4px 0 #a52c47; transition:transform .08s;
+  }
+  .btn:active{transform:translateY(3px); box-shadow:0 1px 0 #a52c47;}
+  .btn.alt{background:#4a3a6a; box-shadow:0 4px 0 #2a1f42;}
+  .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
+  /* Touch controls */
+  #touch{
+    display:none; gap:12px; margin-top:10px; width:96vw; max-width:520px;
+    justify-content:space-between;
+  }
+  #touch .pad{display:flex; gap:12px;}
+  .tbtn{
+    background:var(--panel); color:#fff; border:2px solid var(--accent);
+    width:64px; height:64px; border-radius:50%; font-size:26px; font-weight:bold;
+    display:flex; align-items:center; justify-content:center; touch-action:none;
+  }
+  .tbtn:active{background:var(--accent);}
+  #jump{width:88px; height:88px; font-size:16px;}
+  @media (hover:none) and (pointer:coarse){ #touch{display:flex;} .sub.desk{display:none;} }
+  .heart{color:var(--accent);}
+</style>
+</head>
+<body>
+  <h1>🛢️ Barriles del Amor <span class="heart">❤️</span></h1>
+  <div class="sub desk">← → moverte · ↑ / Espacio saltar · trepa las escaleras y esquiva los barriles</div>
+  <div id="hud">
+    <span>Nivel <b id="level">1</b></span>
+    <span>Puntos <b id="score">0</b></span>
+    <span>Vidas <b id="lives">❤️❤️❤️</b></span>
+  </div>
+
+  <div id="stage">
+    <canvas id="game" width="440" height="620"></canvas>
+
+    <!-- Start -->
+    <div id="startScreen" class="overlay">
+      <h2>Barriles del Amor</h2>
+      <p>Ayuda al plomero a trepar esquivando los barriles del gorila 🦍.<br>
+      Cada vez que <b>pierdas una vida</b>, tu novia te debe una <b>penitencia</b> 😈❤️.</p>
+      <button class="btn" id="startBtn">▶ Empezar</button>
+      <button class="btn alt" id="editBtn">✏️ Editar penitencias</button>
+    </div>
+
+    <!-- Penitence (per hit) -->
+    <div id="peniScreen" class="overlay hidden">
+      <h2>¡Ay! 💥</h2>
+      <p>Perdiste una vida. Penitencia para tu novia:</p>
+      <div class="peni" id="peniText">—</div>
+      <button class="btn" id="continueBtn">Seguir jugando ▶</button>
+    </div>
+
+    <!-- Game over -->
+    <div id="overScreen" class="overlay hidden">
+      <h2 id="overTitle">Fin del juego</h2>
+      <p id="overMsg">—</p>
+      <div class="peni" id="finalPeni">—</div>
+      <button class="btn" id="retryBtn">🔁 Jugar de nuevo</button>
+    </div>
+
+    <!-- Edit penitences -->
+    <div id="editScreen" class="overlay hidden">
+      <h2>Penitencias 😏</h2>
+      <p>Una por línea. Se guardan en este dispositivo.</p>
+      <textarea id="peniArea" style="width:90%;height:180px;border-radius:10px;padding:8px;font-size:14px;border:none;resize:none;"></textarea>
+      <div class="row">
+        <button class="btn" id="saveBtn">💾 Guardar</button>
+        <button class="btn alt" id="cancelBtn">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="touch">
+    <div class="pad">
+      <div class="tbtn" id="left">◀</div>
+      <div class="tbtn" id="right">▶</div>
+    </div>
+    <div class="tbtn" id="jump">SALTO</div>
+  </div>
+
+<script>
+(function(){
+"use strict";
+
+// ---------- Penitencias ----------
+const DEFAULT_PENIS = [
+  "Un masaje de 5 minutos en la espalda 💆",
+  "Un beso largo de 10 segundos 💋",
+  "Preparar (o pedir) su snack favorito 🍿",
+  "Elegir la peli de la próxima noche de citas 🎬",
+  "Un abrazo de oso de 20 segundos 🐻",
+  "Decirle 3 cosas que ama de él 💕",
+  "Una foto tierna juntos 📸",
+  "Bailar una canción lenta juntos 🎶",
+  "Dejarlo ganar en el próximo juego 🎮",
+  "Un cumplido sorpresa por mensaje 💌",
+  "Cocinar juntos su plato favorito 🍝",
+  "Una tarde sin celular, solo ustedes 📵❤️",
+  "Un cafecito servido en la mañana ☕",
+  "Escribirle una nota romántica a mano ✍️",
+  "Planear la próxima escapada juntos 🗺️"
+];
+const STORE_KEY = "barriles_penis_v1";
+function loadPenis(){
+  try{ const s = localStorage.getItem(STORE_KEY); if(s){const a=JSON.parse(s); if(Array.isArray(a)&&a.length) return a;} }catch(e){}
+  return DEFAULT_PENIS.slice();
+}
+function savePenis(arr){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(arr)); }catch(e){} }
+let PENIS = loadPenis();
+let peniBag = [];
+function nextPeni(){
+  if(peniBag.length===0){ peniBag = PENIS.slice(); for(let i=peniBag.length-1;i>0;i--){const j=(Math.random()*(i+1))|0; [peniBag[i],peniBag[j]]=[peniBag[j],peniBag[i]];} }
+  return peniBag.pop();
+}
+
+// ---------- Canvas / constants ----------
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+const G = 0.55;            // gravedad
+const MOVE = 2.4;          // velocidad horizontal
+const JUMP = -9.2;         // impulso de salto
+const PLAT_H = 12;
+const P_W = 22, P_H = 30;  // plomero
+
+// Plataformas ligeramente inclinadas (estilo Donkey Kong)
+// Cada una: y, dir (+1 baja hacia la derecha), gap (hueco por donde caen barriles), ladders
+function buildLevel(){
+  const rows = 5;
+  const marginTop = 60;
+  const spacing = (H - marginTop - 40) / rows;
+  const plats = [];
+  for(let i=0;i<rows;i++){
+    const y = marginTop + i*spacing;
+    const dir = (i%2===0) ? 1 : -1; // zig-zag
+    plats.push({ y, dir, x0:10, x1:W-10 });
+  }
+  // Escaleras: conectan plataforma i con i+1, en posiciones alternas
+  const ladders = [];
+  for(let i=0;i<rows-1;i++){
+    const lx = (i%2===0) ? W-70 : 60;
+    ladders.push({ x:lx, top:plats[i].y, bottom:plats[i+1].y });
+    // una escalera extra al centro
+    ladders.push({ x:(i%2===0)?90:W-90, top:plats[i].y, bottom:plats[i+1].y });
+  }
+  return {plats, ladders, spacing, top:plats[0].y, bottom:plats[rows-1].y};
+}
+
+// altura de plataforma en una x dada (para inclinación)
+function platYAt(p, x){
+  const t = (x - p.x0)/(p.x1-p.x0); // 0..1
+  const slope = 10; // px de inclinación total
+  return p.y + (p.dir>0 ? (t*slope) : ((1-t)*slope));
+}
+
+// ---------- State ----------
+let level = 1, score = 0, lives = 3;
+let state = "start"; // start, play, peni, over, edit
+let L = buildLevel();
+let player, barrels, spawnTimer, gorillaFrame, invuln;
+let barrelSpeedBase = 1.6, spawnEvery = 95;
+
+function resetPlayer(){
+  const bp = L.plats[L.plats.length-1];
+  player = {
+    x: W/2-P_W/2, y: platYAt(bp, W/2)-P_H,
+    vx:0, vy:0, onGround:true, onLadder:false, facing:1,
+    platIndex: L.plats.length-1
+  };
+}
+function startGame(){
+  level=1; score=0; lives=3; barrelSpeedBase=1.6; spawnEvery=95;
+  L = buildLevel(); barrels=[]; spawnTimer=0; gorillaFrame=0; invuln=0;
+  resetPlayer(); updateHud(); state="play";
+  hideAll();
+}
+function nextLevel(){
+  level++; score+=100;
+  barrelSpeedBase += 0.35; spawnEvery = Math.max(45, spawnEvery-8);
+  L = buildLevel(); barrels=[]; spawnTimer=0; resetPlayer(); invuln=60;
+  updateHud();
+}
+
+// ---------- Input ----------
+const keys = {left:false,right:false,up:false,jump:false};
+window.addEventListener('keydown',e=>{
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)) e.preventDefault();
+  if(e.key==='ArrowLeft')keys.left=true;
+  if(e.key==='ArrowRight')keys.right=true;
+  if(e.key==='ArrowUp')keys.up=true;
+  if(e.key===' ')keys.jump=true;
+  if(e.key==='ArrowDown')keys.down=true;
+});
+window.addEventListener('keyup',e=>{
+  if(e.key==='ArrowLeft')keys.left=false;
+  if(e.key==='ArrowRight')keys.right=false;
+  if(e.key==='ArrowUp')keys.up=false;
+  if(e.key===' ')keys.jump=false;
+  if(e.key==='ArrowDown')keys.down=false;
+});
+function bindTouch(id,on,off){
+  const el=document.getElementById(id);
+  const set=(v)=>(e)=>{e.preventDefault(); v?on():off();};
+  el.addEventListener('touchstart',set(true),{passive:false});
+  el.addEventListener('touchend',set(false),{passive:false});
+  el.addEventListener('mousedown',set(true));
+  el.addEventListener('mouseup',set(false));
+  el.addEventListener('mouseleave',set(false));
+}
+bindTouch('left',()=>keys.left=true,()=>keys.left=false);
+bindTouch('right',()=>keys.right=true,()=>keys.right=false);
+bindTouch('jump',()=>{keys.jump=true;keys.up=true;},()=>{keys.jump=false;keys.up=false;});
+
+// ---------- Barrels ----------
+function spawnBarrel(){
+  const top = L.plats[0];
+  barrels.push({ x: top.x0+16, y: platYAt(top,top.x0+16)-10, r:9,
+    vx: barrelSpeedBase, vy:0, platIndex:0, spin:0 });
+}
+function updateBarrel(b){
+  const p = L.plats[b.platIndex];
+  b.spin += b.vx*0.15;
+  b.x += b.vx;
+  // seguir la inclinación de la plataforma
+  const ty = platYAt(p, b.x) - b.r;
+  b.y += (ty - b.y)*0.4;
+  // rebote en los bordes -> baja a la siguiente plataforma
+  if(b.x > p.x1-16 && b.vx>0){
+    dropBarrel(b, +1);
+  } else if(b.x < p.x0+16 && b.vx<0){
+    dropBarrel(b, -1);
+  }
+}
+function dropBarrel(b, side){
+  if(b.platIndex < L.plats.length-1){
+    b.platIndex++;
+    b.vx = -b.vx * 0.98 + (side>0? -0.1:0.1);
+    // asegúrate de que sigue moviéndose
+    if(Math.abs(b.vx)<1) b.vx = (b.vx<0?-1:1)*barrelSpeedBase;
+    b.x += (side>0? -4:4);
+  } else {
+    b.dead = true; // llegó al fondo
+  }
+}
+
+// ---------- Update ----------
+function update(){
+  if(state!=="play") return;
+  if(invuln>0) invuln--;
+
+  // input horizontal
+  player.vx = 0;
+  if(keys.left){player.vx=-MOVE; player.facing=-1;}
+  if(keys.right){player.vx=MOVE; player.facing=1;}
+
+  // escaleras
+  const onLad = ladderAt(player.x+P_W/2, player.y+P_H);
+  player.onLadder = !!onLad;
+  if(onLad && (keys.up||keys.down)){
+    player.vy = keys.up ? -1.7 : 1.7;
+    player.vx *= 0.4;
+    player.onGround=false;
+  } else {
+    // salto
+    if((keys.jump||keys.up) && player.onGround){
+      player.vy = JUMP; player.onGround=false;
+    }
+    player.vy += G;
+    if(player.vy>10) player.vy=10;
+  }
+
+  player.x += player.vx;
+  player.y += player.vy;
+
+  // límites
+  if(player.x<6) player.x=6;
+  if(player.x>W-P_W-6) player.x=W-P_W-6;
+
+  // colisión con plataformas (solo cayendo)
+  player.onGround=false;
+  if(player.vy>=0){
+    for(let i=0;i<L.plats.length;i++){
+      const p=L.plats[i];
+      const py = platYAt(p, player.x+P_W/2);
+      const feet = player.y+P_H;
+      if(feet>=py-2 && feet<=py+14 && player.x+P_W>p.x0 && player.x<p.x1){
+        // no engancharse si va subiendo por escalera
+        if(!(onLad && keys.up)){
+          player.y = py-P_H; player.vy=0; player.onGround=true; player.platIndex=i;
+          break;
+        }
+      }
+    }
+  }
+  // caída al vacío -> reaparece
+  if(player.y>H){ hit(); }
+
+  // ¿llegó arriba? -> siguiente nivel
+  if(player.y+P_H <= L.plats[0].y+16){
+    nextLevel(); return;
+  }
+
+  // barriles
+  spawnTimer++;
+  if(spawnTimer>=spawnEvery){ spawnTimer=0; spawnBarrel(); }
+  for(const b of barrels){ updateBarrel(b); }
+  barrels = barrels.filter(b=>!b.dead);
+
+  // colisión jugador-barril
+  if(invuln<=0){
+    const px=player.x+P_W/2, py=player.y+P_H/2;
+    for(const b of barrels){
+      const dx=px-b.x, dy=py-b.y;
+      if(dx*dx+dy*dy < (b.r+12)*(b.r+12)){ hit(); break; }
+    }
+  }
+  // puntitos por sobrevivir
+  score += 0; // (los puntos grandes vienen por nivel)
+}
+
+function ladderAt(x,y){
+  for(const l of L.ladders){
+    if(Math.abs(x-l.x)<14 && y>=l.top-6 && y<=l.bottom+6) return l;
+  }
+  return null;
+}
+
+function hit(){
+  lives--; updateHud();
+  const p = nextPeni();
+  if(lives<=0){
+    state="over";
+    document.getElementById('overTitle').textContent = score>0? "¡Buen intento! 💪":"Fin del juego";
+    document.getElementById('overMsg').textContent =
+      "Llegaste al nivel "+level+" con "+score+" puntos. Última penitencia:";
+    document.getElementById('finalPeni').textContent = p;
+    show('overScreen');
+  } else {
+    state="peni";
+    document.getElementById('peniText').textContent = p;
+    show('peniScreen');
+  }
+}
+function continueAfterHit(){
+  resetPlayer(); barrels=[]; spawnTimer=0; invuln=90;
+  state="play"; hideAll();
+}
+
+// ---------- Render ----------
+function draw(){
+  ctx.clearRect(0,0,W,H);
+
+  // Gorila arriba a la izquierda
+  drawGorilla(24, 22);
+  // corazón que "custodia" (meta) arriba a la derecha
+  ctx.font="20px serif"; ctx.fillText("❤️", W-46, 40);
+
+  // plataformas
+  for(const p of L.plats){
+    ctx.strokeStyle="#c0392b";
+    ctx.lineWidth=PLAT_H;
+    ctx.lineCap="round";
+    ctx.beginPath();
+    ctx.moveTo(p.x0, platYAt(p,p.x0));
+    ctx.lineTo(p.x1, platYAt(p,p.x1));
+    ctx.stroke();
+    // rayitas de "vigas"
+    ctx.strokeStyle="#7d241a"; ctx.lineWidth=2;
+    for(let x=p.x0+8;x<p.x1;x+=22){
+      ctx.beginPath();
+      ctx.moveTo(x, platYAt(p,x)-5);
+      ctx.lineTo(x+8, platYAt(p,x)+5);
+      ctx.stroke();
+    }
+  }
+  // escaleras
+  ctx.strokeStyle="#4fd1e0"; ctx.lineWidth=3;
+  for(const l of L.ladders){
+    ctx.beginPath(); ctx.moveTo(l.x-7,l.top); ctx.lineTo(l.x-7,l.bottom);
+    ctx.moveTo(l.x+7,l.top); ctx.lineTo(l.x+7,l.bottom); ctx.stroke();
+    for(let y=l.top+6;y<l.bottom;y+=12){
+      ctx.beginPath(); ctx.moveTo(l.x-7,y); ctx.lineTo(l.x+7,y); ctx.stroke();
+    }
+  }
+  // barriles
+  for(const b of barrels) drawBarrel(b);
+  // jugador
+  drawPlayer();
+}
+
+function drawGorilla(x,y){
+  ctx.font="30px serif";
+  ctx.fillText("🦍", x, y+8);
+  // barril que sostiene
+  ctx.fillStyle="#b8742a";
+  ctx.beginPath(); ctx.ellipse(x+34,y,7,10,0,0,7); ctx.fill();
+}
+function drawBarrel(b){
+  ctx.save();
+  ctx.translate(b.x,b.y); ctx.rotate(b.spin);
+  ctx.fillStyle="#c98a3c"; ctx.strokeStyle="#6e4a1c"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(0,0,b.r,0,7); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-b.r,0); ctx.lineTo(b.r,0);
+  ctx.moveTo(0,-b.r); ctx.lineTo(0,b.r); ctx.stroke();
+  ctx.restore();
+}
+function drawPlayer(){
+  const x=player.x, y=player.y;
+  const blink = (invuln>0 && (Math.floor(invuln/4)%2===0));
+  if(blink){ ctx.globalAlpha=0.4; }
+  // cuerpo (overol azul)
+  ctx.fillStyle="#3a6ea5"; ctx.fillRect(x+3,y+12,P_W-6,P_H-12);
+  // camisa roja
+  ctx.fillStyle="#e74c3c"; ctx.fillRect(x+3,y+9,P_W-6,7);
+  // cabeza
+  ctx.fillStyle="#f0c27b"; ctx.fillRect(x+5,y,P_W-10,11);
+  // gorra roja
+  ctx.fillStyle="#c0392b"; ctx.fillRect(x+3,y-2,P_W-6,5);
+  ctx.fillRect(x+ (player.facing>0?P_W-8:2), y+1, 6,3);
+  // bigote
+  ctx.fillStyle="#3b2417"; ctx.fillRect(x+6,y+8,P_W-12,2);
+  ctx.globalAlpha=1;
+}
+
+// ---------- HUD / overlays ----------
+function updateHud(){
+  document.getElementById('level').textContent=level;
+  document.getElementById('score').textContent=score;
+  document.getElementById('lives').textContent="❤️".repeat(Math.max(0,lives)) || "💔";
+}
+const screens=['startScreen','peniScreen','overScreen','editScreen'];
+function hideAll(){ screens.forEach(s=>document.getElementById(s).classList.add('hidden')); }
+function show(id){ hideAll(); document.getElementById(id).classList.remove('hidden'); }
+
+// ---------- Buttons ----------
+document.getElementById('startBtn').onclick=startGame;
+document.getElementById('retryBtn').onclick=startGame;
+document.getElementById('continueBtn').onclick=continueAfterHit;
+document.getElementById('editBtn').onclick=()=>{
+  document.getElementById('peniArea').value = PENIS.join("\n");
+  show('editScreen'); state="edit";
+};
+document.getElementById('saveBtn').onclick=()=>{
+  const lines=document.getElementById('peniArea').value.split("\n").map(s=>s.trim()).filter(Boolean);
+  PENIS = lines.length? lines : DEFAULT_PENIS.slice();
+  savePenis(PENIS); peniBag=[]; show('startScreen'); state="start";
+};
+document.getElementById('cancelBtn').onclick=()=>{ show('startScreen'); state="start"; };
+
+// ---------- Loop ----------
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
+loop();
+
+})();
+</script>
+</body>
+</html>
