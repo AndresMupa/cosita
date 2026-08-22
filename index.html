@@ -25,8 +25,8 @@
   #wrap{display:flex; flex-direction:column; align-items:center; gap:6px; padding-top:6px;}
   #topbar{display:flex; align-items:center; gap:8px; width:min(96vw,460px); justify-content:space-between;}
   #brand{font-family:'Press Start 2P',monospace; font-size:clamp(9px,2.6vw,13px); color:var(--gold); text-shadow:0 2px 0 #7a1030,0 0 12px #ff527755;}
-  #sound{background:var(--panel); border:2px solid #ffffff22; color:#fff; width:38px;height:38px;border-radius:12px;font-size:18px;cursor:pointer;}
-  #sound:active{transform:scale(.92);}
+  #sound,#pauseBtn{background:var(--panel); border:2px solid #ffffff22; color:#fff; width:38px;height:38px;border-radius:12px;font-size:18px;cursor:pointer;}
+  #sound:active,#pauseBtn:active{transform:scale(.92);}
   #stage{position:relative; filter:drop-shadow(0 12px 30px #000a);}
   canvas{
     display:block; image-rendering:pixelated; max-width:96vw; height:auto;
@@ -92,7 +92,10 @@
 <div id="wrap">
   <div id="topbar">
     <div id="brand">BARRILES DEL AMOR</div>
-    <button id="sound" title="Sonido">🔊</button>
+    <div style="display:flex;gap:8px">
+      <button id="pauseBtn" title="Pausa">⏸</button>
+      <button id="sound" title="Sonido">🔊</button>
+    </div>
   </div>
   <div id="stage">
     <canvas id="game" width="448" height="640"></canvas>
@@ -102,24 +105,37 @@
     <div id="startScreen" class="overlay">
       <div class="card">
         <h2 class="title">BARRILES<br>DEL AMOR</h2>
-        <p><b>Ella</b> trepa esquivando los barriles que <b>tú</b> 🦍 le lanzas. Cada vida perdida = una <b>penitencia</b> para ella 😈❤️</p>
+        <p><b>Ella</b> trepa hasta <b>ti</b> 🦍 y te da un <b>besito</b> para ganar 💋. Si te besa = carta a favor de <b style="color:#ff8fa8">ella</b> 💖. Si pierde una vida = carta a favor de <b style="color:#7fb0ff">él</b> 💙.</p>
+        <p class="hint" style="color:#ffd166;font-weight:800">👇 Pon sus caras reales (un toque, se guardan en tu celu)</p>
         <div class="faces">
-          <div class="face"><div class="ring" id="ringHero">👧</div><label>Foto de ella<input type="file" id="fileHero" accept="image/*"></label></div>
-          <div class="face"><div class="ring" id="ringBoss">🦍</div><label>Foto tuya<input type="file" id="fileBoss" accept="image/*"></label></div>
+          <div class="face"><div class="ring" id="ringHero">👧</div><label>📷 Cara de ella<input type="file" id="fileHero" accept="image/*"></label></div>
+          <div class="face"><div class="ring" id="ringBoss">🦍</div><label>📷 Tu cara<input type="file" id="fileBoss" accept="image/*"></label></div>
         </div>
-        <p class="hint">Las fotos se guardan solo en este dispositivo. Nunca se suben a internet.</p>
+        <p class="hint" id="totLine">Historial · 💖 Ella: 0 &nbsp; 💙 Él: 0</p>
         <button class="btn" id="startBtn">▶ JUGAR</button>
-        <button class="btn alt small" id="editBtn">✏️ Penitencias</button>
+        <button class="btn alt small" id="editBtn">✏️ Editar cartas</button>
       </div>
     </div>
 
-    <!-- Penitence -->
+    <!-- Penitence (pierde vida -> carta a favor de ÉL) -->
     <div id="peniScreen" class="overlay hidden">
       <div class="card">
-        <h2 class="title" style="color:#ff8fa8">¡AY! 💥</h2>
-        <p>Perdió una vida. Penitencia para ella:</p>
-        <div class="peni" id="peniText">—</div>
+        <h2 class="title" style="color:#7fb0ff">CARTA A FAVOR DE ÉL 💙</h2>
+        <p>Perdió una vida. Ella le debe a él:</p>
+        <div class="peni" id="peniText" style="background:linear-gradient(135deg,#4d8bff,#7ad0ff);color:#07213f">—</div>
+        <p class="hint" id="peniTally">💙 Él: 0 · 💖 Ella: 0</p>
         <button class="btn" id="continueBtn">Seguir ▶</button>
+      </div>
+    </div>
+
+    <!-- Win (besa al gorila -> carta a favor de ELLA) -->
+    <div id="winScreen" class="overlay hidden">
+      <div class="card">
+        <h2 class="title" style="color:#ff8fa8">¡BESO! 💋❤️</h2>
+        <p>¡Llegó hasta ti y te dio un besito! Premio, carta a favor de <b>ella</b>:</p>
+        <div class="peni" id="winText">—</div>
+        <p class="hint" id="winTally">💖 Ella: 0 · 💙 Él: 0</p>
+        <button class="btn" id="nextBtn">Siguiente nivel ▶</button>
       </div>
     </div>
 
@@ -128,7 +144,8 @@
       <div class="card">
         <h2 class="title" id="overTitle">GAME OVER</h2>
         <p id="overMsg">—</p>
-        <div class="peni" id="finalPeni">—</div>
+        <div class="peni" id="finalPeni" style="background:linear-gradient(135deg,#4d8bff,#7ad0ff);color:#07213f">—</div>
+        <p id="overTally" style="font-weight:800">💖 Ella: 0 &nbsp;·&nbsp; 💙 Él: 0</p>
         <button class="btn" id="retryBtn">🔁 Otra vez</button>
       </div>
     </div>
@@ -145,9 +162,11 @@
     <!-- Edit -->
     <div id="editScreen" class="overlay hidden">
       <div class="card">
-        <h2 class="title" style="font-size:14px">PENITENCIAS</h2>
-        <p class="hint">Una por línea. Se guardan en este dispositivo.</p>
-        <textarea id="peniArea"></textarea>
+        <h2 class="title" style="font-size:13px">CARTAS</h2>
+        <p class="hint" style="color:#ff8fa8;font-weight:800">💖 A favor de ELLA (él le hace)</p>
+        <textarea id="ellaArea" style="height:110px"></textarea>
+        <p class="hint" style="color:#7fb0ff;font-weight:800">💙 A favor de ÉL (ella le hace)</p>
+        <textarea id="peniArea" style="height:110px"></textarea>
         <div class="row">
           <button class="btn small" id="saveBtn">💾 Guardar</button>
           <button class="btn alt small" id="cancelBtn">Cancelar</button>
@@ -180,12 +199,27 @@ const DEFAULT_PENIS=[
   "Te sirve el cafecito mañana ☕","Escribirte una nota romántica a mano ✍️",
   "Planear juntos la próxima escapada 🗺️"
 ];
-const K={pen:"bda_pen",best:"bda_best",hero:"bda_hero",boss:"bda_boss",mute:"bda_mute"};
+// Cartas a favor de ELLA: cosas que él hace por ella (premio al besar al gorila)
+const DEFAULT_ELLA=[
+  "Él cocina tu cena favorita 👨‍🍳","Masaje de pies de 10 minutos 🦶","Eliges plan de todo el finde 🗓️",
+  "Desayuno en la cama ☕🥐","Él lava los platos toda la semana 🍽️","Una cita sorpresa organizada por él 🎁",
+  "Maratón de tu serie favorita, sin quejas 📺","Ramo de flores 💐","Él te consiente con tu antojo 🍫",
+  "Foto/pareja como tú quieras 📸","Te deja ganar y te aplaude 🏆","Una carta de amor escrita por él ✍️❤️",
+  "Sesión de mimos de 30 min 🥰","Él paga el próximo café/postre 🍰","Un baile lento dedicado a ti 💃"
+];
+const K={pen:"bda_pen",ella:"bda_ella",best:"bda_best",hero:"bda_hero",boss:"bda_boss",mute:"bda_mute",tot:"bda_tot"};
 const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v;}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
-function loadPenis(){try{const a=JSON.parse(ls.get(K.pen,"null"));if(Array.isArray(a)&&a.length)return a;}catch(e){}return DEFAULT_PENIS.slice();}
-let PENIS=loadPenis(),penBag=[];
-function nextPeni(){if(!penBag.length){penBag=PENIS.slice();for(let i=penBag.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[penBag[i],penBag[j]]=[penBag[j],penBag[i]];}}return penBag.pop();}
+function loadList(key,def){try{const a=JSON.parse(ls.get(key,"null"));if(Array.isArray(a)&&a.length)return a;}catch(e){}return def.slice();}
+let PENIS=loadList(K.pen,DEFAULT_PENIS),ELLAS=loadList(K.ella,DEFAULT_ELLA),penBag=[],ellaBag=[];
+function drawFrom(list,bagRef){if(!bagRef.a.length){bagRef.a=list.slice();for(let i=bagRef.a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[bagRef.a[i],bagRef.a[j]]=[bagRef.a[j],bagRef.a[i]];}}return bagRef.a.pop();}
+const _penRef={a:penBag},_ellaRef={a:ellaBag};
+function nextPeni(){return drawFrom(PENIS,_penRef);}
+function nextElla(){return drawFrom(ELLAS,_ellaRef);}
 let best=parseInt(ls.get(K.best,"0"),10)||0;
+// marcador de cartas (partida actual + histórico)
+let cards={ella:0,el:0};
+let total; try{total=JSON.parse(ls.get(K.tot,"null"))||{ella:0,el:0};}catch(e){total={ella:0,el:0};}
+function saveTotal(){ls.set(K.tot,JSON.stringify(total));}
 
 /* ---------- Audio (chiptune sintetizado, sin archivos) ---------- */
 const Audio2={ctx:null,master:null,muted:ls.get(K.mute,"0")==="1",musicGain:null,musicTimer:null,
@@ -273,18 +307,30 @@ function platYAt(p,x){const t=(x-p.x0)/(p.x1-p.x0),slope=11;return p.y+(p.dir>0?
 let level=1,score=0,scoreShown=0,lives=3,state="start";
 let L=buildLevel(),player,barrels,items,parts,pops;
 let spawnTimer,spawnEvery,barrelSpeed,invuln,hammer,tick=0;
-let shake=0,freeze=0,combo=0,comboT=0,flashT=0;
+let shake=0,freeze=0,combo=0,comboT=0,flashT=0,kissT=0,hearts=0;
 const boss={x:24,y:22,beat:0,throw:0,sway:0};
+const bossCX=boss.x+24; // centro del gorila
 
 function resetPlayer(){ const bp=L.plats[L.plats.length-1];
   player={x:W/2-P_W/2,y:platYAt(bp,W/2)-P_H,vx:0,vy:0,onGround:true,onLadder:false,facing:1,
     coyote:0,jbuf:0,jumpHeld:false,walk:0,sx:1,sy:1,climb:0,anim:'idle'}; }
 function startGame(){ level=1;score=0;scoreShown=0;lives=3;barrelSpeed=1.8;spawnEvery=88;
-  L=buildLevel();barrels=[];items=[];parts=[];pops=[];spawnTimer=0;invuln=40;hammer=0;combo=0;comboT=0;
+  cards={ella:0,el:0};
+  L=buildLevel();barrels=[];items=[];parts=[];pops=[];spawnTimer=0;invuln=40;hammer=0;combo=0;comboT=0;kissT=0;
   resetPlayer();updateHud();state="play";hideAll(); Audio2.init();Audio2.resume(); if(!Audio2.muted)Audio2.music(true); }
 function nextLevel(){ level++;addScore(150,W/2,90,"NIVEL "+level+" ✨",'#ffd166');Audio2.sfx('level');
   barrelSpeed+=0.35;spawnEvery=Math.max(34,spawnEvery-9);
   L=buildLevel();barrels=[];items=[];spawnTimer=0;hammer=0;resetPlayer();invuln=70;shake=6;updateHud(); }
+// llegó arriba -> corre hacia el gorila y lo besa
+function startKiss(){ state="kiss"; kissT=84; hearts=0; Audio2.music(false); shake=4;
+  const top=L.plats[0]; player.x=boss.x+42; player.y=platYAt(top,player.x+P_W/2)-P_H;
+  player.vx=0; player.vy=0; player.onGround=true; player.facing=-1; player.anim='idle'; }
+function winRound(){ cards.ella++; total.ella++; saveTotal(); updateHud(); Audio2.sfx('level');
+  const fav=nextElla();
+  document.getElementById('winText').textContent=fav;
+  document.getElementById('winTally').textContent="💖 Ella: "+cards.ella+" · 💙 Él: "+cards.el;
+  state="win"; show('winScreen'); }
+function continueAfterWin(){ nextLevel(); state="play"; hideAll(); if(!Audio2.muted)Audio2.music(true); }
 
 /* ---------- Input ---------- */
 const keys={left:false,right:false,up:false,down:false};
@@ -342,6 +388,12 @@ function update(){
   // score tally animation
   if(scoreShown<score)scoreShown=Math.min(score,scoreShown+Math.ceil((score-scoreShown)/6));
   boss.sway=Math.sin(tick*0.05)*2; if(boss.beat>0)boss.beat--; if(boss.throw>0)boss.throw--;
+  if(state==="kiss"){ kissT--;
+    if(tick%2===0){ const hx=(bossCX+(player.x+P_W/2))/2; parts.push({x:hx+(Math.random()-.5)*22,y:58,vx:(Math.random()-.5)*1.2,vy:-1.7,life:44,color:'#ff4d6d',heart:true,g:-0.008}); }
+    for(const q of parts){ q.x+=q.vx; q.y+=q.vy; q.vy+=(q.g||0); q.life--; } parts=parts.filter(q=>q.life>0);
+    if(kissT===60)Audio2.sfx('coin'); if(kissT===30)Audio2.sfx('level');
+    if(kissT<=0) winRound();
+    updateHudScore(); return; }
   if(state!=="play"){ updateHudScore(); return; }
   if(freeze>0){ freeze--; return; }
   if(invuln>0)invuln--; if(hammer>0){hammer--; if(hammer===0)Audio2.sfx('menu');}
@@ -378,7 +430,7 @@ function update(){
   else pl.anim='idle';
 
   if(pl.y>H){ hit(); }
-  if(pl.y+P_H<=L.plats[0].y+16){ nextLevel(); return; }
+  if(pl.y+P_H<=L.plats[0].y+16){ startKiss(); return; }
 
   spawnTimer++; if(spawnTimer>=spawnEvery){ spawnTimer=0; spawnBarrel(); boss.throw=16; boss.beat=10; Audio2.sfx('menu'); }
   maybeHammer();
@@ -407,12 +459,17 @@ function update(){
 function ladderAt(x,y){ for(const l of L.ladders){ if(Math.abs(x-l.x)<14&&y>=l.top-6&&y<=l.bottom+6)return l; } return null; }
 function hit(){ lives--; updateHud(); Audio2.sfx('hit'); shake=12; freeze=8; flashT=18; combo=0;
   addParts(player.x+P_W/2,player.y+P_H/2,'#ff5277',18,1.8);
+  cards.el++; total.el++; saveTotal();
   const p=nextPeni();
   if(lives<=0){ state="over"; Audio2.music(false);
     document.getElementById('overTitle').textContent="¡BUEN INTENTO! 💪";
-    document.getElementById('overMsg').textContent="Llegó al nivel "+level+" con "+score+" pts. Récord: "+best+". Última penitencia:";
-    document.getElementById('finalPeni').textContent=p; show('overScreen'); }
-  else { state="peni"; document.getElementById('peniText').textContent=p; show('peniScreen'); }
+    document.getElementById('overMsg').textContent="Llegó al nivel "+level+" con "+score+" pts. Récord: "+best+". Última carta a favor de él:";
+    document.getElementById('finalPeni').textContent=p;
+    document.getElementById('overTally').innerHTML="💖 Ella: "+cards.ella+" &nbsp;·&nbsp; 💙 Él: "+cards.el;
+    show('overScreen'); }
+  else { state="peni"; document.getElementById('peniText').textContent=p;
+    document.getElementById('peniTally').textContent="💙 Él: "+cards.el+" · 💖 Ella: "+cards.ella;
+    show('peniScreen'); }
 }
 function continueAfterHit(){ resetPlayer();barrels=[];items=[];spawnTimer=0;invuln=90;hammer=0;state="play";hideAll(); if(!Audio2.muted)Audio2.music(true); }
 
@@ -430,6 +487,7 @@ function draw(){
   for(const b of barrels)drawBarrel(b);
   drawHeroine();
   drawParticles();
+  if(state==="kiss")drawKiss();
   drawPops();
   drawComboMeter();
   ctx.restore();
@@ -581,8 +639,21 @@ function drawItem(it){ const bob=Math.sin(it.t*0.13)*3;
   ctx.save();ctx.globalAlpha=.35;ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(it.x,it.y+bob,16,0,7);ctx.fill();ctx.restore();
   ctx.font='24px serif';ctx.textAlign='center';ctx.fillText('🔨',it.x,it.y+bob+8);ctx.textAlign='left'; }
 function drawParticles(){ for(const q of parts){ ctx.globalAlpha=Math.max(0,q.life/34);
-  if(q.star){ ctx.fillStyle=q.color; ctx.save();ctx.translate(q.x,q.y);ctx.rotate(q.life*0.3);ctx.fillRect(-2,-2,4,4);ctx.restore(); }
+  if(q.heart){ drawHeartShape(q.x,q.y,3+ (q.life/44)*3,'#ff4d6d'); }
+  else if(q.star){ ctx.fillStyle=q.color; ctx.save();ctx.translate(q.x,q.y);ctx.rotate(q.life*0.3);ctx.fillRect(-2,-2,4,4);ctx.restore(); }
   else { ctx.fillStyle=q.color; ctx.fillRect(q.x-2,q.y-2,4,4); } } ctx.globalAlpha=1; }
+function drawHeartShape(x,y,s,color){ ctx.save();ctx.translate(x,y);ctx.scale(s/8,s/8);ctx.fillStyle=color;
+  ctx.beginPath();ctx.moveTo(0,3);ctx.bezierCurveTo(-8,-6,-13,4,0,13);ctx.bezierCurveTo(13,4,8,-6,0,3);ctx.fill();ctx.restore(); }
+function drawKiss(){ // 💋 y corazón grande entre ella y el gorila
+  const cx=(bossCX+(player.x+P_W/2))/2, cy=40;
+  const s=1+Math.sin(tick*0.4)*0.15;
+  drawHeartShape(cx,cy,16*s,'#ff4d6d');
+  ctx.font='20px serif';ctx.textAlign='center';ctx.fillText('💋',cx,cy+7);ctx.textAlign='left';
+  // banda de texto
+  ctx.save();ctx.globalAlpha=Math.min(1,(84-kissT)/20);ctx.textAlign='center';
+  ctx.font="800 18px 'Baloo 2',sans-serif";ctx.lineWidth=4;ctx.strokeStyle='#00000066';
+  ctx.strokeText('¡BESITO! 😘',W/2,H/2);ctx.fillStyle='#ffd166';ctx.fillText('¡BESITO! 😘',W/2,H/2);
+  ctx.restore();ctx.textAlign='left'; }
 function drawPops(){ ctx.textAlign='center'; ctx.font="800 16px 'Baloo 2',sans-serif";
   for(const q of pops){ ctx.globalAlpha=Math.max(0,q.life/64); ctx.lineWidth=3;ctx.strokeStyle='#00000066';
     ctx.strokeText(q.txt,q.x,q.y); ctx.fillStyle=q.color; ctx.fillText(q.txt,q.x,q.y); } ctx.globalAlpha=1; ctx.textAlign='left'; }
@@ -594,12 +665,14 @@ function drawComboMeter(){ if(combo>1&&comboT>0){ ctx.save(); ctx.globalAlpha=Ma
 /* ---------- HUD / overlays ---------- */
 function heartsStr(n){ return '❤️'.repeat(Math.max(0,n))||'💔'; }
 function updateHud(){ document.getElementById('level').textContent=level;
-  document.getElementById('best').textContent=best;
-  document.getElementById('lives').textContent=heartsStr(lives); }
+  document.getElementById('lives').textContent=heartsStr(lives);
+  const ce=document.getElementById('cElla'),cl=document.getElementById('cEl');
+  if(ce)ce.textContent=cards.ella; if(cl)cl.textContent=cards.el; }
 function updateHudScore(){ document.getElementById('score').textContent=scoreShown; }
-const screens=['startScreen','peniScreen','overScreen','editScreen','pauseScreen'];
+const screens=['startScreen','peniScreen','winScreen','overScreen','editScreen','pauseScreen'];
 function hideAll(){ screens.forEach(s=>document.getElementById(s).classList.add('hidden')); }
-function show(id){ hideAll(); document.getElementById(id).classList.remove('hidden'); }
+function show(id){ hideAll(); document.getElementById(id).classList.remove('hidden');
+  if(id==='startScreen'){ const t=document.getElementById('totLine'); if(t)t.innerHTML='Historial · 💖 Ella: '+total.ella+' &nbsp; 💙 Él: '+total.el; } }
 
 /* ---------- Pause ---------- */
 function togglePause(){ if(state==='play'){ state='pause'; Audio2.music(false); show('pauseScreen'); }
@@ -609,12 +682,19 @@ function togglePause(){ if(state==='play'){ state='pause'; Audio2.music(false); 
 document.getElementById('startBtn').onclick=startGame;
 document.getElementById('retryBtn').onclick=startGame;
 document.getElementById('continueBtn').onclick=continueAfterHit;
+document.getElementById('nextBtn').onclick=continueAfterWin;
 document.getElementById('resumeBtn').onclick=togglePause;
+document.getElementById('pauseBtn').onclick=togglePause;
 document.getElementById('quitBtn').onclick=()=>{state='start';Audio2.music(false);show('startScreen');};
 document.getElementById('fileHero').addEventListener('change',e=>handleFile(e.target,K.hero,'hero'));
 document.getElementById('fileBoss').addEventListener('change',e=>handleFile(e.target,K.boss,'boss'));
-document.getElementById('editBtn').onclick=()=>{document.getElementById('peniArea').value=PENIS.join("\n");show('editScreen');state='edit';};
-document.getElementById('saveBtn').onclick=()=>{const lines=document.getElementById('peniArea').value.split("\n").map(s=>s.trim()).filter(Boolean);PENIS=lines.length?lines:DEFAULT_PENIS.slice();ls.set(K.pen,JSON.stringify(PENIS));penBag=[];show('startScreen');state='start';};
+document.getElementById('editBtn').onclick=()=>{document.getElementById('ellaArea').value=ELLAS.join("\n");document.getElementById('peniArea').value=PENIS.join("\n");show('editScreen');state='edit';};
+document.getElementById('saveBtn').onclick=()=>{
+  const el=document.getElementById('ellaArea').value.split("\n").map(s=>s.trim()).filter(Boolean);
+  const pe=document.getElementById('peniArea').value.split("\n").map(s=>s.trim()).filter(Boolean);
+  ELLAS=el.length?el:DEFAULT_ELLA.slice(); PENIS=pe.length?pe:DEFAULT_PENIS.slice();
+  ls.set(K.ella,JSON.stringify(ELLAS)); ls.set(K.pen,JSON.stringify(PENIS));
+  _ellaRef.a=[]; _penRef.a=[]; show('startScreen');state='start';};
 document.getElementById('cancelBtn').onclick=()=>{show('startScreen');state='start';};
 
 /* ---------- HUD panel inj/ loop ---------- */
@@ -623,13 +703,13 @@ const hud=document.createElement('div');
 hud.style.cssText="display:flex;gap:8px;font-family:'Press Start 2P',monospace;font-size:10px;margin:2px 0 4px;flex-wrap:wrap;justify-content:center;";
 hud.innerHTML='<span style="background:#241640;padding:6px 10px;border-radius:8px">NIVEL <b id="level">1</b></span>'
 +'<span style="background:#241640;padding:6px 10px;border-radius:8px">PTS <b id="score">0</b></span>'
-+'<span style="background:#241640;padding:6px 10px;border-radius:8px">RÉCORD <b id="best">0</b></span>'
-+'<span style="background:#241640;padding:6px 10px;border-radius:8px" id="livesWrap">VIDAS <b id="lives">❤️❤️❤️</b></span>';
++'<span style="background:#241640;padding:6px 10px;border-radius:8px" id="livesWrap">VIDAS <b id="lives">❤️❤️❤️</b></span>'
++'<span style="background:#3a1630;padding:6px 10px;border-radius:8px">💖<b id="cElla">0</b> 💙<b id="cEl">0</b></span>';
 document.getElementById('wrap').insertBefore(hud,document.getElementById('stage'));
 
 barrels=[];items=[];parts=[];pops=[];spawnTimer=0;invuln=0;hammer=0;barrelSpeed=1.8;spawnEvery=88;
 resetPlayer();updateHud();updateHudScore();
-document.getElementById('best').textContent=best;
+{const t=document.getElementById('totLine'); if(t)t.innerHTML='Historial · 💖 Ella: '+total.ella+' &nbsp; 💙 Él: '+total.el;}
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
 loop();
 
