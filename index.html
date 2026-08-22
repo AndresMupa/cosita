@@ -18,18 +18,20 @@
     font-family:'Baloo 2','Trebuchet MS',system-ui,sans-serif;
     background:radial-gradient(120% 90% at 50% -10%,var(--sky1),var(--sky2) 70%);
     color:#fff; display:flex; flex-direction:column; align-items:center;
-    justify-content:flex-start; min-height:100%; overflow:hidden; touch-action:none; user-select:none;
+    justify-content:flex-start; overflow:hidden; touch-action:none; user-select:none;
+    height:100vh; height:100dvh;
     padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
   }
   .arcade{font-family:'Press Start 2P','Trebuchet MS',monospace;}
-  #wrap{display:flex; flex-direction:column; align-items:center; gap:6px; padding-top:6px;}
+  #wrap{display:flex; flex-direction:column; align-items:center; gap:5px; padding-top:5px;
+    width:100%; height:100%; justify-content:flex-start;}
   #topbar{display:flex; align-items:center; gap:8px; width:min(96vw,460px); justify-content:space-between;}
   #brand{font-family:'Press Start 2P',monospace; font-size:clamp(9px,2.6vw,13px); color:var(--gold); text-shadow:0 2px 0 #7a1030,0 0 12px #ff527755;}
   #sound,#pauseBtn{background:var(--panel); border:2px solid #ffffff22; color:#fff; width:38px;height:38px;border-radius:12px;font-size:18px;cursor:pointer;}
   #sound:active,#pauseBtn:active{transform:scale(.92);}
-  #stage{position:relative; filter:drop-shadow(0 12px 30px #000a);}
+  #stage{position:relative; filter:drop-shadow(0 12px 30px #000a); flex:0 1 auto;}
   canvas{
-    display:block; image-rendering:pixelated; max-width:96vw; height:auto;
+    display:block; image-rendering:pixelated; max-width:96vw;
     border:3px solid #ffffff18; border-radius:14px; background:#0e0720;
   }
   .overlay{
@@ -75,20 +77,32 @@
   .face input{display:none;}
   textarea{width:100%;height:150px;border-radius:10px;padding:8px;font-size:14px;border:none;resize:none;font-family:inherit;}
   /* touch controls */
-  #touch{display:none; position:fixed; inset:auto 0 0 0; padding:0 16px calc(14px + env(safe-area-inset-bottom)); justify-content:space-between; pointer-events:none;}
-  #touch .grp{display:flex; gap:14px; pointer-events:auto;}
+  #touch{display:none; width:min(96vw,480px); padding:2px 6px calc(4px + env(safe-area-inset-bottom));
+    justify-content:space-between; align-items:center; flex:0 0 auto;}
+  #touch .grp{display:flex; gap:14px;}
   .tbtn{
     background:radial-gradient(circle at 35% 30%,#3a2a5e,#1c1236); color:#fff; border:2px solid #ffffff2a;
-    width:66px; height:66px; border-radius:50%; font-size:26px; font-weight:800; display:flex; align-items:center; justify-content:center;
+    width:clamp(58px,17vw,74px); aspect-ratio:1; border-radius:50%; font-size:clamp(22px,6vw,28px);
+    font-weight:800; display:flex; align-items:center; justify-content:center;
     touch-action:none; box-shadow:0 6px 14px #0007, inset 0 2px 0 #ffffff22;
   }
   .tbtn:active{transform:scale(.9); background:radial-gradient(circle at 35% 30%,#ff6b8a,#c0324f);}
-  #jump{width:92px;height:92px;font-size:15px; border-color:#ffd16688;}
+  #jump{width:clamp(78px,22vw,98px); font-size:clamp(13px,3.6vw,16px); border-color:#ffd16688;}
   @media (hover:none) and (pointer:coarse){ #touch{display:flex;} .desk{display:none;} }
   .flash{position:absolute; inset:0; background:radial-gradient(circle,transparent 40%,#ff003344 100%); border-radius:12px; opacity:0; pointer-events:none;}
+  #rotate{display:none; position:fixed; inset:0; z-index:50; background:var(--sky2);
+    flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; padding:20px;}
+  #rotate .em{font-size:56px; animation:tilt 1.6s ease-in-out infinite;}
+  @keyframes tilt{0%,100%{transform:rotate(-15deg)}50%{transform:rotate(75deg)}}
+  @media (hover:none) and (pointer:coarse) and (orientation:landscape){ #rotate{display:flex;} }
 </style>
 </head>
 <body>
+<div id="rotate">
+  <div class="em">📱</div>
+  <div class="title" style="font-size:14px;color:var(--gold)">GIRA EL TELÉFONO</div>
+  <p style="max-width:280px;opacity:.9">Barriles del Amor se juega mejor en vertical 🙂</p>
+</div>
 <div id="wrap">
   <div id="topbar">
     <div id="brand">BARRILES DEL AMOR</div>
@@ -174,11 +188,10 @@
       </div>
     </div>
   </div>
-</div>
-
-<div id="touch">
-  <div class="grp"><div class="tbtn" id="left">◀</div><div class="tbtn" id="right">▶</div></div>
-  <div class="grp"><div class="tbtn" id="jump">SALTO</div></div>
+  <div id="touch">
+    <div class="grp"><div class="tbtn" id="left">◀</div><div class="tbtn" id="right">▶</div></div>
+    <div class="grp"><div class="tbtn" id="jump">SALTO</div></div>
+  </div>
 </div>
 
 <script>
@@ -709,16 +722,36 @@ document.getElementById('cancelBtn').onclick=()=>{show('startScreen');state='sta
 /* ---------- HUD panel inj/ loop ---------- */
 // HUD como barra de juego bajo el topbar
 const hud=document.createElement('div');
-hud.style.cssText="display:flex;gap:8px;font-family:'Press Start 2P',monospace;font-size:10px;margin:2px 0 4px;flex-wrap:wrap;justify-content:center;";
-hud.innerHTML='<span style="background:#241640;padding:6px 10px;border-radius:8px">NIVEL <b id="level">1</b></span>'
-+'<span style="background:#241640;padding:6px 10px;border-radius:8px">PTS <b id="score">0</b></span>'
-+'<span style="background:#241640;padding:6px 10px;border-radius:8px" id="livesWrap">VIDAS <b id="lives">❤️❤️❤️</b></span>'
-+'<span style="background:#3a1630;padding:6px 10px;border-radius:8px">💖<b id="cElla">0</b> 💙<b id="cEl">0</b></span>';
+hud.style.cssText="display:flex;gap:5px;font-family:'Press Start 2P',monospace;font-size:clamp(7px,2.1vw,10px);margin:1px 0;flex-wrap:wrap;justify-content:center;width:min(96vw,480px);";
+const cell="background:#241640;padding:5px 7px;border-radius:8px;white-space:nowrap";
+hud.innerHTML='<span style="'+cell+'">NIVEL <b id="level">1</b></span>'
++'<span style="'+cell+'">PTS <b id="score">0</b></span>'
++'<span style="'+cell+'" id="livesWrap">VIDAS <b id="lives">❤️❤️❤️</b></span>'
++'<span style="background:#3a1630;padding:5px 7px;border-radius:8px;white-space:nowrap">💖<b id="cElla">0</b> 💙<b id="cEl">0</b></span>';
 document.getElementById('wrap').insertBefore(hud,document.getElementById('stage'));
+
+/* ---------- Ajuste responsive del canvas (celular) ---------- */
+const RATIO=W/H; // 448/640
+function resizeCanvas(){
+  const topbar=document.getElementById('topbar'), touch=document.getElementById('touch');
+  const gaps=26; // paddings/gaps del layout
+  const touchH=(getComputedStyle(touch).display!=='none')?touch.offsetHeight:0;
+  const used=topbar.offsetHeight+hud.offsetHeight+touchH+gaps;
+  const availW=Math.min(window.innerWidth*0.97,480);
+  const availH=Math.max(200,window.innerHeight-used);
+  let w=availW, h=w/RATIO;
+  if(h>availH){ h=availH; w=h*RATIO; }
+  w=Math.floor(w); h=Math.floor(w/RATIO);
+  cv.style.width=w+'px'; cv.style.height=h+'px';
+}
+window.addEventListener('resize',resizeCanvas);
+window.addEventListener('orientationchange',()=>setTimeout(resizeCanvas,200));
+if(window.visualViewport)window.visualViewport.addEventListener('resize',resizeCanvas);
 
 barrels=[];items=[];parts=[];pops=[];spawnTimer=0;invuln=0;hammer=0;barrelSpeed=1.8;spawnEvery=88;
 resetPlayer();updateHud();updateHudScore();
 {const t=document.getElementById('totLine'); if(t)t.innerHTML='Historial · 💖 Ella: '+total.ella+' &nbsp; 💙 Él: '+total.el;}
+resizeCanvas(); setTimeout(resizeCanvas,120); setTimeout(resizeCanvas,600);
 function loop(){ update(); draw(); requestAnimationFrame(loop); }
 loop();
 
