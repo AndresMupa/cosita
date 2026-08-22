@@ -3,93 +3,154 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Barriles del Amor 🛢️❤️</title>
+<title>Arcana Kart</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Baloo+2:wght@600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Outfit:wght@400;600;800&display=swap">
 <style>
   :root{
-    --ink:#1a0f2e; --sky1:#2a1650; --sky2:#120a24; --accent:#ff5277; --gold:#ffd166;
-    --good:#5ee6a0; --panel:#241640; --panel2:#160c2c;
+    /* paleta tomada del arte: azul plasma (él) + ámbar rúnico (ella) */
+    --bg0:#070b16; --bg1:#101a2e; --sky1:#16233d; --sky2:#070b16;
+    --cyan:#38bdf8; --cyan-deep:#0ea5e9; --amber:#f4b942; --ember:#e8763c;
+    --magenta:#e879c8; --good:#4ade80;
+    --glass:rgba(148,180,225,.09); --glass-hi:rgba(190,215,255,.16);
+    --line:rgba(160,195,240,.16); --txt:#eef4ff; --txt-dim:#9fb2cd;
+    --panel:rgba(16,26,46,.72);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;height:100%;}
   body{
-    font-family:'Baloo 2','Trebuchet MS',system-ui,sans-serif;
-    background:radial-gradient(120% 90% at 50% -10%,var(--sky1),var(--sky2) 70%);
-    color:#fff; display:flex; flex-direction:column; align-items:center;
+    font-family:'Outfit',system-ui,sans-serif;
+    background:
+      radial-gradient(90% 60% at 15% 0%,rgba(56,189,248,.13),transparent 60%),
+      radial-gradient(80% 55% at 90% 10%,rgba(244,185,66,.10),transparent 60%),
+      linear-gradient(180deg,var(--bg1),var(--bg0) 65%);
+    color:var(--txt); display:flex; flex-direction:column; align-items:center;
     justify-content:flex-start; overflow:hidden; touch-action:none; user-select:none;
     height:100vh; height:100dvh;
     padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
   }
-  .arcade{font-family:'Press Start 2P','Trebuchet MS',monospace;}
-  #wrap{display:flex; flex-direction:column; align-items:center; gap:5px; padding-top:5px;
+  #wrap{display:flex; flex-direction:column; align-items:center; gap:6px; padding-top:6px;
     width:100%; height:100%; justify-content:flex-start;}
-  #topbar{display:flex; align-items:center; gap:8px; width:min(96vw,460px); justify-content:space-between;}
-  #brand{font-family:'Press Start 2P',monospace; font-size:clamp(9px,2.6vw,13px); color:var(--gold); text-shadow:0 2px 0 #7a1030,0 0 12px #ff527755;}
-  #sound,#pauseBtn{background:var(--panel); border:2px solid #ffffff22; color:#fff; width:38px;height:38px;border-radius:12px;font-size:18px;cursor:pointer;}
-  #sound:active,#pauseBtn:active{transform:scale(.92);}
-  #stage{position:relative; filter:drop-shadow(0 12px 30px #000a); flex:0 1 auto;}
-  canvas{
-    display:block; image-rendering:pixelated; max-width:96vw;
-    border:3px solid #ffffff18; border-radius:14px; background:#0e0720;
+  /* ---- topbar ---- */
+  #topbar{display:flex; align-items:center; gap:10px; width:min(96vw,480px); justify-content:space-between;}
+  #brand{font-family:'Chakra Petch',sans-serif; font-weight:700; letter-spacing:.14em;
+    font-size:clamp(11px,3vw,15px); text-transform:uppercase;
+    background:linear-gradient(100deg,var(--cyan),#a9e4ff 35%,var(--amber));
+    -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .icobtn{
+    background:var(--glass); border:1px solid var(--line); color:var(--txt);
+    width:40px;height:40px;border-radius:13px;font-size:17px;cursor:pointer;
+    backdrop-filter:blur(12px); display:flex;align-items:center;justify-content:center;
+    transition:transform .12s ease, background .2s ease, border-color .2s ease;
   }
+  .icobtn:hover{background:var(--glass-hi); border-color:rgba(56,189,248,.45);}
+  .icobtn:active{transform:scale(.9);}
+  /* ---- HUD ---- */
+  #hudbar{display:flex; gap:6px; width:min(96vw,480px); justify-content:center; flex-wrap:wrap;}
+  .chip{
+    display:flex; align-items:center; gap:5px; padding:5px 10px; border-radius:11px;
+    background:var(--glass); border:1px solid var(--line); backdrop-filter:blur(12px);
+    font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:clamp(10px,2.6vw,13px);
+    font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--txt);
+  }
+  .chip .k{color:var(--txt-dim); font-size:.85em; letter-spacing:.06em;}
+  .chip.hers{border-color:rgba(232,121,200,.4); background:rgba(232,121,200,.12);}
+  .chip.his{border-color:rgba(56,189,248,.4); background:rgba(56,189,248,.12);}
+  /* ---- stage ---- */
+  #stage{position:relative; flex:0 1 auto;
+    filter:drop-shadow(0 18px 42px rgba(0,0,0,.65));}
+  canvas{
+    display:block; max-width:96vw;
+    border:1px solid var(--line); border-radius:18px; background:var(--bg0);
+  }
+  /* ---- overlays ---- */
   .overlay{
     position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; text-align:center; gap:12px; padding:18px; overflow:auto;
-    background:rgba(12,6,26,.78); backdrop-filter:blur(3px); border-radius:12px;
-    animation:fade .25s ease;
+    justify-content:center; text-align:center; gap:12px; padding:16px; overflow:auto;
+    background:rgba(7,11,22,.66); backdrop-filter:blur(16px) saturate(1.2);
+    border-radius:18px; animation:fade .28s cubic-bezier(.2,.8,.3,1);
   }
   @keyframes fade{from{opacity:0}to{opacity:1}}
   .hidden{display:none !important;}
   .card{
-    background:linear-gradient(180deg,var(--panel),var(--panel2));
-    border:2px solid #ffffff20; border-radius:18px; padding:18px 16px; max-width:360px;
-    box-shadow:0 10px 30px #0008, inset 0 1px 0 #ffffff18; display:flex; flex-direction:column; align-items:center; gap:12px;
+    position:relative; background:var(--panel); border:1px solid var(--line);
+    border-radius:22px; padding:20px 18px; max-width:360px; width:100%;
+    box-shadow:0 24px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(190,215,255,.14);
+    backdrop-filter:blur(20px); display:flex; flex-direction:column; align-items:center; gap:12px;
+    animation:rise .32s cubic-bezier(.2,.9,.3,1);
   }
-  .title{font-family:'Press Start 2P',monospace; color:var(--gold); font-size:clamp(13px,3.4vw,18px); line-height:1.6; text-shadow:0 3px 0 #7a1030;}
+  @keyframes rise{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+  .title{
+    font-family:'Chakra Petch',sans-serif; font-weight:700; letter-spacing:.08em;
+    font-size:clamp(17px,4.6vw,24px); line-height:1.25; text-transform:uppercase;
+    background:linear-gradient(100deg,var(--cyan),#cfe9ff 45%,var(--amber));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
   h2.title{margin:0;}
-  .overlay p{margin:0; max-width:320px; line-height:1.4; font-size:14px; opacity:.95;}
-  .hint{font-size:11px; opacity:.6;}
+  .overlay p{margin:0; max-width:320px; line-height:1.5; font-size:14px; color:var(--txt);}
+  .hint{font-size:12px; color:var(--txt-dim); line-height:1.45;}
   .peni{
-    background:linear-gradient(135deg,#ff5277,#ff9a3c); color:#2a0a15; font-weight:800;
-    padding:14px 16px; border-radius:14px; font-size:clamp(15px,4vw,19px); box-shadow:0 6px 18px #ff527755;
-    max-width:320px; line-height:1.35; animation:pop .45s cubic-bezier(.2,1.4,.4,1);
+    position:relative; background:linear-gradient(135deg,rgba(232,121,200,.2),rgba(244,185,66,.16));
+    border:1px solid rgba(232,121,200,.45); color:var(--txt); font-weight:600;
+    padding:15px 16px; border-radius:16px; font-size:clamp(15px,4vw,18px);
+    box-shadow:0 10px 30px rgba(232,121,200,.16), inset 0 1px 0 rgba(255,255,255,.12);
+    max-width:320px; line-height:1.4; animation:pop .45s cubic-bezier(.2,1.4,.4,1);
   }
-  @keyframes pop{0%{transform:scale(.5) rotate(-4deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+  .peni.blue{background:linear-gradient(135deg,rgba(56,189,248,.2),rgba(14,165,233,.14));
+    border-color:rgba(56,189,248,.45); box-shadow:0 10px 30px rgba(56,189,248,.16), inset 0 1px 0 rgba(255,255,255,.12);}
+  @keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
   .btn{
-    font-family:'Baloo 2',sans-serif; background:linear-gradient(180deg,#ff6b8a,var(--accent)); color:#fff; border:none;
-    font-weight:800; padding:13px 30px; border-radius:32px; font-size:17px; cursor:pointer;
-    box-shadow:0 5px 0 #a52c47, 0 8px 16px #ff527744; transition:transform .07s, box-shadow .07s;
+    font-family:'Chakra Petch',sans-serif; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+    background:linear-gradient(180deg,rgba(56,189,248,.95),var(--cyan-deep));
+    color:#04121f; border:none; padding:14px 28px; border-radius:14px;
+    font-size:clamp(14px,3.6vw,16px); cursor:pointer; width:100%;
+    box-shadow:0 8px 22px rgba(56,189,248,.32), inset 0 1px 0 rgba(255,255,255,.35);
+    transition:transform .1s ease, box-shadow .2s ease, filter .2s ease;
   }
-  .btn:active{transform:translateY(4px); box-shadow:0 1px 0 #a52c47;}
-  .btn.alt{background:linear-gradient(180deg,#5b4a80,#4a3a6a); box-shadow:0 5px 0 #2a1f42;}
-  .btn.small{padding:9px 16px; font-size:13px;}
-  .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center;}
-  .faces{display:flex; gap:18px; justify-content:center; margin:2px 0;}
-  .face{display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11px;}
+  .btn:hover{filter:brightness(1.08);}
+  .btn:active{transform:translateY(2px) scale(.99); box-shadow:0 3px 12px rgba(56,189,248,.28);}
+  .btn.alt{background:var(--glass); border:1px solid var(--line); color:var(--txt);
+    box-shadow:none; backdrop-filter:blur(12px);}
+  .btn.alt:hover{background:var(--glass-hi);}
+  .btn.small{padding:10px 16px; font-size:13px; width:auto;}
+  .btn:focus-visible,.icobtn:focus-visible{outline:2px solid var(--amber); outline-offset:3px;}
+  .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center; width:100%;}
+  /* ---- caras ---- */
+  .faces{display:flex; gap:20px; justify-content:center; margin:2px 0;}
+  .face{display:flex; flex-direction:column; align-items:center; gap:7px; font-size:11px;}
   .face .ring{
-    width:62px; height:62px; border-radius:50%; border:3px solid var(--gold);
-    background:#2a1740 center/cover no-repeat; display:flex; align-items:center; justify-content:center;
-    font-size:26px; overflow:hidden; box-shadow:0 4px 10px #0006;
+    width:64px; height:64px; border-radius:20px; border:1px solid var(--line);
+    background:rgba(56,189,248,.08) center/cover no-repeat; display:flex; align-items:center; justify-content:center;
+    font-size:26px; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.12);
   }
-  .face label{cursor:pointer; text-decoration:underline; opacity:.9;}
+  .face.her .ring{border-color:rgba(244,185,66,.5); background-color:rgba(244,185,66,.1);}
+  .face.him .ring{border-color:rgba(56,189,248,.5);}
+  .face label{cursor:pointer; color:var(--txt-dim); border-bottom:1px dashed var(--line); padding-bottom:2px;}
+  .face label:hover{color:var(--txt);}
   .face input{display:none;}
-  textarea{width:100%;height:150px;border-radius:10px;padding:8px;font-size:14px;border:none;resize:none;font-family:inherit;}
-  /* touch controls */
-  #touch{display:none; width:min(96vw,480px); padding:2px 6px calc(4px + env(safe-area-inset-bottom));
+  textarea{width:100%;height:110px;border-radius:12px;padding:10px;font-size:13px;
+    border:1px solid var(--line); background:rgba(7,11,22,.6); color:var(--txt);
+    resize:none;font-family:inherit; line-height:1.5;}
+  textarea:focus{outline:none; border-color:rgba(56,189,248,.5);}
+  /* ---- controles táctiles ---- */
+  #touch{display:none; width:min(96vw,480px); padding:2px 4px calc(4px + env(safe-area-inset-bottom));
     justify-content:space-between; align-items:center; flex:0 0 auto;}
-  #touch .grp{display:flex; gap:14px;}
+  #touch .grp{display:flex; gap:12px;}
   .tbtn{
-    background:radial-gradient(circle at 35% 30%,#3a2a5e,#1c1236); color:#fff; border:2px solid #ffffff2a;
-    width:clamp(58px,17vw,74px); aspect-ratio:1; border-radius:50%; font-size:clamp(22px,6vw,28px);
-    font-weight:800; display:flex; align-items:center; justify-content:center;
-    touch-action:none; box-shadow:0 6px 14px #0007, inset 0 2px 0 #ffffff22;
+    background:var(--glass); color:var(--txt); border:1px solid var(--line);
+    width:clamp(60px,17vw,74px); aspect-ratio:1; border-radius:22px; font-size:clamp(20px,5.5vw,26px);
+    font-family:'Chakra Petch',sans-serif; font-weight:700;
+    display:flex; align-items:center; justify-content:center; backdrop-filter:blur(14px);
+    touch-action:none; box-shadow:0 8px 20px rgba(0,0,0,.42), inset 0 1px 0 rgba(190,215,255,.16);
+    transition:transform .08s ease, background .15s ease;
   }
-  .tbtn:active{transform:scale(.9); background:radial-gradient(circle at 35% 30%,#ff6b8a,#c0324f);}
-  #jump{width:clamp(78px,22vw,98px); font-size:clamp(13px,3.6vw,16px); border-color:#ffd16688;}
+  .tbtn:active{transform:scale(.9); background:rgba(56,189,248,.32); border-color:rgba(56,189,248,.6);}
+  #jump{width:clamp(84px,23vw,100px); font-size:clamp(12px,3.2vw,15px); letter-spacing:.08em;
+    background:linear-gradient(180deg,rgba(56,189,248,.28),rgba(14,165,233,.16));
+    border-color:rgba(56,189,248,.45);}
   @media (hover:none) and (pointer:coarse){ #touch{display:flex;} .desk{display:none;} }
-  .flash{position:absolute; inset:0; background:radial-gradient(circle,transparent 40%,#ff003344 100%); border-radius:12px; opacity:0; pointer-events:none;}
+  .flash{position:absolute; inset:0; background:radial-gradient(circle,transparent 45%,rgba(255,60,80,.35) 100%); border-radius:18px; opacity:0; pointer-events:none; transition:opacity .1s;}
   #rotate{display:none; position:fixed; inset:0; z-index:50; background:var(--sky2);
     flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; padding:20px;}
   #rotate .em{font-size:56px; animation:tilt 1.6s ease-in-out infinite;}
@@ -100,15 +161,15 @@
 <body>
 <div id="rotate">
   <div class="em">📱</div>
-  <div class="title" style="font-size:14px;color:var(--gold)">GIRA EL TELÉFONO</div>
-  <p style="max-width:280px;opacity:.9">Barriles del Amor se juega mejor en vertical 🙂</p>
+  <div class="title" style="font-size:15px">Gira el teléfono</div>
+  <p style="max-width:280px;color:var(--txt-dim)">Arcana Kart se juega en vertical.</p>
 </div>
 <div id="wrap">
   <div id="topbar">
-    <div id="brand">BARRILES DEL AMOR</div>
+    <div id="brand">Arcana Kart</div>
     <div style="display:flex;gap:8px">
-      <button id="pauseBtn" title="Pausa">⏸</button>
-      <button id="sound" title="Sonido">🔊</button>
+      <button class="icobtn" id="pauseBtn" title="Pausa" aria-label="Pausa">⏸</button>
+      <button class="icobtn" id="sound" title="Sonido" aria-label="Sonido">🔊</button>
     </div>
   </div>
   <div id="stage">
@@ -118,74 +179,72 @@
     <!-- Start -->
     <div id="startScreen" class="overlay">
       <div class="card">
-        <h2 class="title">BARRILES<br>DEL AMOR</h2>
-        <p>La <b>princesa</b> 👑 trepa hasta el <b>hechicero</b> 🧙 y le da un <b>besito</b> para ganar 💋.<br>
-        Si lo besa = carta a favor de <b style="color:#ff8fa8">ella</b> 💖. Si pierde una vida = carta a favor de <b style="color:#7fb0ff">él</b> 💙.</p>
-        <p class="hint">🎁 Cajas de ítem · 🍄 turbo · ⭐ estrella · 🐢 caparazón · 🪙 monedas · 🚀 rampas</p>
-        <p class="hint" style="color:#ffd166;font-weight:800">👇 Pon sus caras reales (un toque, se guardan en tu celu)</p>
+        <h2 class="title">Arcana Kart</h2>
+        <p>La <b>maga</b> 📜 escala hasta el <b>caballero de plasma</b> ⚔️ y le roba un <b>beso</b> para ganar el circuito.</p>
+        <p class="hint">Beso ganado → carta a favor de <b style="color:var(--magenta)">ella</b> · vida perdida → carta a favor de <b style="color:var(--cyan)">él</b></p>
         <div class="faces">
-          <div class="face"><div class="ring" id="ringHero">👧</div><label>📷 Cara de ella<input type="file" id="fileHero" accept="image/*"></label></div>
-          <div class="face"><div class="ring" id="ringBoss">🦍</div><label>📷 Tu cara<input type="file" id="fileBoss" accept="image/*"></label></div>
+          <div class="face her"><div class="ring" id="ringHero">📜</div><label>Cara de ella<input type="file" id="fileHero" accept="image/*"></label></div>
+          <div class="face him"><div class="ring" id="ringBoss">⚔️</div><label>Tu cara<input type="file" id="fileBoss" accept="image/*"></label></div>
         </div>
-        <p class="hint" id="totLine">Historial · 💖 Ella: 0 &nbsp; 💙 Él: 0</p>
-        <button class="btn" id="startBtn">▶ JUGAR</button>
-        <button class="btn alt small" id="editBtn">✏️ Editar cartas</button>
+        <p class="hint" id="totLine">Historial · 💖 0 &nbsp; 💙 0</p>
+        <button class="btn" id="startBtn">Jugar</button>
+        <button class="btn alt small" id="editBtn">Editar cartas</button>
       </div>
     </div>
 
     <!-- Penitence (pierde vida -> carta a favor de ÉL) -->
     <div id="peniScreen" class="overlay hidden">
       <div class="card">
-        <h2 class="title" style="color:#7fb0ff">CARTA A FAVOR DE ÉL 💙</h2>
-        <p>Perdió una vida. Ella le debe a él:</p>
-        <div class="peni" id="peniText" style="background:linear-gradient(135deg,#4d8bff,#7ad0ff);color:#07213f">—</div>
-        <p class="hint" id="peniTally">💙 Él: 0 · 💖 Ella: 0</p>
-        <button class="btn" id="continueBtn">Seguir ▶</button>
+        <h2 class="title">Carta para él</h2>
+        <p class="hint">Cayó ante el caballero. Ella le debe:</p>
+        <div class="peni blue" id="peniText">—</div>
+        <p class="hint" id="peniTally">💙 0 · 💖 0</p>
+        <button class="btn" id="continueBtn">Continuar</button>
       </div>
     </div>
 
-    <!-- Win (besa al gorila -> carta a favor de ELLA) -->
+    <!-- Win -->
     <div id="winScreen" class="overlay hidden">
       <div class="card">
-        <h2 class="title" style="color:#ff8fa8">¡BESO! 💋❤️</h2>
-        <p>¡Llegó hasta ti y te dio un besito! Premio, carta a favor de <b>ella</b>:</p>
+        <h2 class="title">Beso robado</h2>
+        <p class="hint">Llegó hasta ti. Carta a favor de <b style="color:var(--magenta)">ella</b>:</p>
         <div class="peni" id="winText">—</div>
-        <p class="hint" id="winTally">💖 Ella: 0 · 💙 Él: 0</p>
-        <p class="hint" id="nextSub" style="color:#ffd166"></p>
-        <button class="btn" id="nextBtn">Siguiente circuito ▶</button>
+        <p class="hint" id="winTally">💖 0 · 💙 0</p>
+        <p class="hint" id="nextSub" style="color:var(--amber)"></p>
+        <button class="btn" id="nextBtn">Siguiente circuito</button>
       </div>
     </div>
 
     <!-- Game over -->
     <div id="overScreen" class="overlay hidden">
       <div class="card">
-        <h2 class="title" id="overTitle">GAME OVER</h2>
-        <p id="overMsg">—</p>
-        <div class="peni" id="finalPeni" style="background:linear-gradient(135deg,#4d8bff,#7ad0ff);color:#07213f">—</div>
-        <p id="overTally" style="font-weight:800">💖 Ella: 0 &nbsp;·&nbsp; 💙 Él: 0</p>
-        <button class="btn" id="retryBtn">🔁 Otra vez</button>
+        <h2 class="title" id="overTitle">Fin de la carrera</h2>
+        <p class="hint" id="overMsg">—</p>
+        <div class="peni blue" id="finalPeni">—</div>
+        <p id="overTally" class="hint">💖 0 · 💙 0</p>
+        <button class="btn" id="retryBtn">Reintentar</button>
       </div>
     </div>
 
     <!-- Pause -->
     <div id="pauseScreen" class="overlay hidden">
       <div class="card">
-        <h2 class="title">PAUSA</h2>
-        <button class="btn" id="resumeBtn">▶ Continuar</button>
-        <button class="btn alt small" id="quitBtn">⏹ Salir al menú</button>
+        <h2 class="title">Pausa</h2>
+        <button class="btn" id="resumeBtn">Continuar</button>
+        <button class="btn alt small" id="quitBtn">Salir al menú</button>
       </div>
     </div>
 
     <!-- Edit -->
     <div id="editScreen" class="overlay hidden">
       <div class="card">
-        <h2 class="title" style="font-size:13px">CARTAS</h2>
-        <p class="hint" style="color:#ff8fa8;font-weight:800">💖 A favor de ELLA (él le hace)</p>
-        <textarea id="ellaArea" style="height:110px"></textarea>
-        <p class="hint" style="color:#7fb0ff;font-weight:800">💙 A favor de ÉL (ella le hace)</p>
-        <textarea id="peniArea" style="height:110px"></textarea>
+        <h2 class="title">Cartas</h2>
+        <p class="hint" style="color:var(--magenta);align-self:flex-start">💖 A favor de ella — él se las cumple</p>
+        <textarea id="ellaArea"></textarea>
+        <p class="hint" style="color:var(--cyan);align-self:flex-start">💙 A favor de él — ella se las cumple</p>
+        <textarea id="peniArea"></textarea>
         <div class="row">
-          <button class="btn small" id="saveBtn">💾 Guardar</button>
+          <button class="btn small" id="saveBtn">Guardar</button>
           <button class="btn alt small" id="cancelBtn">Cancelar</button>
         </div>
       </div>
@@ -312,7 +371,7 @@ loadHead(K.hero,'hero',DEFAULT_HERO_IMG); loadHead(K.boss,'boss',DEFAULT_BOSS_IM
 const cv=document.getElementById('game'),ctx=cv.getContext('2d');
 const W=cv.width,H=cv.height;
 ctx.imageSmoothingEnabled=true;
-const G=0.62,MOVE=3.0,JUMP=-10.4,PLAT_H=13,P_W=26,P_H=34;
+const G=0.62,MOVE=3.0,JUMP=-10.4,PLAT_H=13,P_W=30,P_H=44;
 
 /* ---------- Nivel ---------- */
 function buildLevel(){ const rows=5,top=78,spacing=(H-top-46)/rows,plats=[];
@@ -336,12 +395,12 @@ function platYAt(p,x){const t=(x-p.x0)/(p.x1-p.x0),slope=11;return p.y+(p.dir>0?
 
 /* ---------- Circuitos (estilo Mario Kart) ---------- */
 const THEMES=[
-  {name:'CIRCUITO CORAZÓN', sky1:'#241041',sky2:'#0e0720', ground:'#d64541',groundHi:'#f08a86',rivet:'#8f2420',
-   lad1:'#57e0d8',lad2:'#9af3ee', brick:'rgba(255,255,255,.035)', decor:'night', enemy:'barrel'},
+  {name:'NEXO ARCANO', sky1:'#16233d',sky2:'#070b16', ground:'#33455f',groundHi:'#7dd8ff',rivet:'#1d2a3d',
+   lad1:'#f4b942',lad2:'#ffe0a3', brick:'rgba(160,195,240,.05)', decor:'night', enemy:'barrel'},
   {name:'PRADERA MARIO', sky1:'#5c94fc',sky2:'#93b9ff', ground:'#e07b2a',groundHi:'#ffc078',rivet:'#9c4a12',
    lad1:'#36c23a',lad2:'#9bf29b', brick:'rgba(0,0,0,.05)', decor:'day', enemy:'goomba'},
-  {name:'CUEVA FANTASMA', sky1:'#04121f',sky2:'#01080f', ground:'#3a7fbf',groundHi:'#7cc0f0',rivet:'#123a5f',
-   lad1:'#cfd6dc',lad2:'#f2f6fa', brick:'rgba(255,255,255,.045)', decor:'cave', enemy:'barrel'},
+  {name:'ABISMO DE CRISTAL', sky1:'#061524',sky2:'#01080f', ground:'#2f6ea8',groundHi:'#9fe0ff',rivet:'#12405f',
+   lad1:'#cfe6f5',lad2:'#f2f9ff', brick:'rgba(160,220,255,.05)', decor:'cave', enemy:'barrel'},
   {name:'CASTILLO DE FUEGO', sky1:'#2a0a0a',sky2:'#100202', ground:'#8a5230',groundHi:'#c08a54',rivet:'#3a1a0a',
    lad1:'#d8a850',lad2:'#f2d69a', brick:'rgba(255,120,60,.06)', decor:'lava', enemy:'fire'},
   {name:'SENDA ARCOÍRIS', sky1:'#12002e',sky2:'#04000f', ground:'rainbow',groundHi:'#ffffff',rivet:'#ffffff55',
@@ -665,96 +724,138 @@ function circleHead(img,cx,cy,r){ ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,7
   ctx.drawImage(img,cx-r,cy-r,2*r,2*r);ctx.restore();
   ctx.lineWidth=2;ctx.strokeStyle='#00000040';ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.stroke(); }
 
-/* ------- Heroína (ella) ------- */
+/* ------- ELLA: maga erudita (gabardina, animal print, tablet rúnica) ------- */
 function drawHeroine(){
   const pl=player; const blink=(invuln>0&&Math.floor(invuln/4)%2===0);
   ctx.save(); ctx.globalAlpha=blink?0.45:1;
   ctx.translate(pl.x+P_W/2,pl.y+P_H); ctx.scale(pl.facing*pl.sx,pl.sy); ctx.translate(-P_W/2,-P_H);
-  const cx=P_W/2;
-  // fase de piernas
-  const run=(pl.anim==='run'); const swing=run?Math.sin(pl.walk)*4:0;
-  const climb=(pl.anim==='climb'); const cl=climb?Math.sin(pl.climb)*3:0;
-  const jump=(pl.anim==='jump');
-  ctx.lineJoin='round';
-  // ===== SKIN: PRINCESA 👑 =====
-  const legY=P_H-9;
+  const cx=P_W/2;                       // 15
+  const run=(pl.anim==='run'), jump=(pl.anim==='jump'), climb=(pl.anim==='climb');
+  const swing=run?Math.sin(pl.walk)*4:0;
+  const cl=climb?Math.sin(pl.climb)*3:0;
+  const sway=run?Math.sin(pl.walk)*1.8:0;
+  const armSw=run?Math.sin(pl.walk)*4:(jump?-4:0);
+  ctx.lineJoin='round'; ctx.lineCap='round';
+
+  const LEA='#6b3f26', LEA_HI='#8d5734', LEA_DK='#4a2a18';
+  const hy=10+(jump?-1:0);              // centro de la cabeza
+  const SHO=21;                          // hombros
+  const WAIST=30;                        // cintura
+  const LEG=33;                          // arranque piernas
+
+  // ---- melena larga (detrás de todo) ----
+  ctx.fillStyle='#3b2415';
+  ctx.beginPath();
+  ctx.moveTo(cx-10,hy-5);
+  ctx.quadraticCurveTo(cx-19-sway,hy+8,cx-14-sway*1.4,hy+22);
+  ctx.quadraticCurveTo(cx,hy+18,cx+14+sway*1.4,hy+22);
+  ctx.quadraticCurveTo(cx+19+sway,hy+8,cx+10,hy-5);
+  ctx.quadraticCurveTo(cx,hy-13,cx-10,hy-5);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#4d3220';
+  ctx.beginPath();ctx.moveTo(cx-7,hy+3);ctx.quadraticCurveTo(cx-13-sway,hy+12,cx-10-sway,hy+20);
+  ctx.quadraticCurveTo(cx-4,hy+14,cx-7,hy+3);ctx.fill();
+
+  // ---- piernas: pantalón oscuro, rodilleras, botas ----
   const l1=jump?-3:swing, l2=jump?3:-swing;
-  // piernas + zapatitos dorados
-  drawLimb(cx-3,legY,cx-3+(climb?cl:l1),P_H,4,'#f1c9a0','#f0c15a');
-  drawLimb(cx+3,legY,cx+3+(climb?-cl:l2),P_H,4,'#f1c9a0','#f0c15a');
-  // falda del vestido (campana rosa)
-  const sway=run?Math.sin(pl.walk)*1.6:0;
-  ctx.fillStyle='#ff5fa2';
-  ctx.beginPath(); ctx.moveTo(cx-7,17); ctx.lineTo(cx+7,17);
-  ctx.quadraticCurveTo(cx+13+sway,legY-1,cx+10+sway,legY+1);
-  ctx.lineTo(cx-10+sway,legY+1);
-  ctx.quadraticCurveTo(cx-13+sway,legY-1,cx-7,17); ctx.closePath(); ctx.fill();
-  // volante claro del borde
-  ctx.fillStyle='#ffa8cf'; ctx.beginPath();
-  ctx.moveTo(cx-10+sway,legY+1); ctx.lineTo(cx+10+sway,legY+1);
-  ctx.quadraticCurveTo(cx+sway,legY+5,cx-10+sway,legY+1); ctx.fill();
-  // corpiño
-  ctx.fillStyle='#ff2f7f'; rr(cx-6,13,12,6,3); ctx.fill();
-  // broche joya
-  ctx.fillStyle='#8ef0ff'; ctx.beginPath();ctx.arc(cx,17,1.8,0,7);ctx.fill();
-  // hombros abullonados
-  ctx.fillStyle='#ff7ab5'; ctx.beginPath();ctx.arc(cx-7,14,3.4,0,7);ctx.arc(cx+7,14,3.4,0,7);ctx.fill();
-  // brazos con guantes largos blancos
-  const armSwing=run?Math.sin(pl.walk)*4:(jump?-4:0);
-  ctx.strokeStyle='#fff3f8'; ctx.lineWidth=4; ctx.lineCap='round';
-  ctx.beginPath();ctx.moveTo(cx-8,16);ctx.lineTo(cx-10,23+armSwing);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(cx+8,16);ctx.lineTo(cx+10,23-armSwing);ctx.stroke();
-  // cabeza (su cara)
-  const hy=6+(jump?-1:0);
-  if(heads.hero){ // avatar con su cara + corona
-    ctx.save();ctx.fillStyle='#00000033';ctx.beginPath();ctx.arc(cx,hy+1,12.5,0,7);ctx.fill();ctx.restore();
-    circleHead(heads.hero,cx,hy,12);
-    ctx.strokeStyle='#ffd166cc';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,hy,12,0,7);ctx.stroke();
-    drawCrown(cx,hy-11.5);
+  drawLimb(cx-4,LEG,cx-4+(climb?cl:l1),P_H-3,5.5,'#252c36','#5a3a24');
+  drawLimb(cx+4,LEG,cx+4+(climb?-cl:l2),P_H-3,5.5,'#2e3742','#5a3a24');
+  ctx.fillStyle='#a9793f';
+  ctx.beginPath();ctx.ellipse(cx-4,LEG+4,2.8,2.2,0,0,7);ctx.ellipse(cx+4,LEG+4,2.8,2.2,0,0,7);ctx.fill();
+  ctx.fillStyle='#6b4425';
+  ctx.beginPath();ctx.ellipse(cx-4+(climb?cl:l1),P_H-1.5,4.2,3,0,0,7);
+  ctx.ellipse(cx+4+(climb?-cl:l2),P_H-1.5,4.2,3,0,0,7);ctx.fill();
+
+  // ---- faldones de la gabardina (ondean detrás) ----
+  ctx.fillStyle=LEA_DK;
+  ctx.beginPath(); ctx.moveTo(cx-9,WAIST-6); ctx.lineTo(cx+9,WAIST-6);
+  ctx.quadraticCurveTo(cx+13+sway*1.6,WAIST+2,cx+10+sway*2.2,P_H-8);
+  ctx.lineTo(cx-10+sway*2.2,P_H-8);
+  ctx.quadraticCurveTo(cx-13+sway*1.6,WAIST+2,cx-9,WAIST-6); ctx.closePath(); ctx.fill();
+
+  // ---- top animal print (zebra) ----
+  ctx.fillStyle='#efe7dc'; rr(cx-6.5,SHO-2,13,11,2); ctx.fill();
+  ctx.strokeStyle='#2b2521'; ctx.lineWidth=1.3;
+  for(let i=0;i<4;i++){ const yy=SHO+i*2.4;
+    ctx.beginPath(); ctx.moveTo(cx-6.5,yy); ctx.quadraticCurveTo(cx,yy+(i%2?1.6:-1.6),cx+6.5,yy); ctx.stroke(); }
+
+  // ---- gabardina de cuero abierta ----
+  ctx.fillStyle=LEA;
+  ctx.beginPath(); ctx.moveTo(cx-10,SHO-3); ctx.lineTo(cx-4.5,SHO-1); ctx.lineTo(cx-3.5,WAIST+1);
+  ctx.lineTo(cx-10+sway,WAIST+2); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx+10,SHO-3); ctx.lineTo(cx+4.5,SHO-1); ctx.lineTo(cx+3.5,WAIST+1);
+  ctx.lineTo(cx+10+sway,WAIST+2); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=LEA_HI; // solapas/hombros
+  ctx.beginPath(); ctx.moveTo(cx-10,SHO-3); ctx.lineTo(cx-4,SHO-1); ctx.lineTo(cx-4.5,SHO+3); ctx.lineTo(cx-10,SHO+2); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx+10,SHO-3); ctx.lineTo(cx+4,SHO-1); ctx.lineTo(cx+4.5,SHO+3); ctx.lineTo(cx+10,SHO+2); ctx.closePath(); ctx.fill();
+
+  // ---- colgante dorado ----
+  ctx.strokeStyle='#d9b45a'; ctx.lineWidth=0.9;
+  ctx.beginPath();ctx.moveTo(cx-3,SHO-2);ctx.lineTo(cx,SHO+2.5);ctx.lineTo(cx+3,SHO-2);ctx.stroke();
+  ctx.fillStyle='#e8c157'; ctx.beginPath();ctx.arc(cx,SHO+3.2,2,0,7);ctx.fill();
+
+  // ---- cinturón dorado + cartuchera ----
+  ctx.fillStyle='#3a2a1c'; ctx.fillRect(cx-8,WAIST-2,16,3.4);
+  ctx.fillStyle='#e0b34a'; ctx.fillRect(cx-2.5,WAIST-2.4,5,4.2);
+  ctx.fillStyle='#5a3a24'; rr(cx+5.5,WAIST+2,4.5,5.5,1.5); ctx.fill();
+  ctx.fillStyle='#c99a3f'; ctx.fillRect(cx+6.5,WAIST+3.6,2.5,1);
+
+  // ---- brazos con guantes sin dedos ----
+  ctx.strokeStyle=LEA; ctx.lineWidth=4.5;
+  ctx.beginPath();ctx.moveTo(cx-9,SHO);ctx.lineTo(cx-11,SHO+9+armSw);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx+9,SHO);ctx.lineTo(cx+12,SHO+6-armSw);ctx.stroke();
+  ctx.strokeStyle='#2f2a26'; ctx.lineWidth=3.8;
+  ctx.beginPath();ctx.moveTo(cx-11,SHO+7+armSw);ctx.lineTo(cx-11,SHO+9.5+armSw);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx+12,SHO+4-armSw);ctx.lineTo(cx+12,SHO+6.5-armSw);ctx.stroke();
+
+  // ---- tablet rúnica flotando sobre su mano ----
+  drawRuneTablet(cx+15,SHO+3-armSw);
+
+  // ---- cabeza (su cara) ----
+  if(heads.hero){
+    ctx.save();ctx.fillStyle='#00000038';ctx.beginPath();ctx.arc(cx,hy+1,10.5,0,7);ctx.fill();ctx.restore();
+    circleHead(heads.hero,cx,hy,10);
+    ctx.strokeStyle='rgba(244,185,66,.75)';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(cx,hy,10,0,7);ctx.stroke();
   } else {
-    // pelo largo detrás
-    ctx.fillStyle='#4e3220'; rr(cx-9,hy-8,18,20,7); ctx.fill();
-    // cara
-    ctx.fillStyle='#f1c9a0'; ctx.beginPath();ctx.arc(cx,hy,7.5,0,7);ctx.fill();
-    // fleco
-    ctx.fillStyle='#5a3a24'; ctx.beginPath();ctx.arc(cx,hy-2,7.8,Math.PI,0);ctx.fill();
-    // gafas doradas
-    ctx.strokeStyle='#f0c15a'; ctx.lineWidth=1.4;
-    ctx.beginPath();ctx.arc(cx-3,hy+1,2.4,0,7);ctx.stroke();
-    ctx.beginPath();ctx.arc(cx+3,hy+1,2.4,0,7);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(cx-0.6,hy+1);ctx.lineTo(cx+0.6,hy+1);ctx.stroke();
-    // ojos + sonrisa
-    ctx.fillStyle='#2a1a12'; ctx.fillRect(cx-3.6,hy+0.4,1.3,1.3); ctx.fillRect(cx+2.3,hy+0.4,1.3,1.3);
-    ctx.strokeStyle='#b25a52'; ctx.lineWidth=1; ctx.beginPath();ctx.arc(cx,hy+3.6,2,0.15*Math.PI,0.85*Math.PI);ctx.stroke();
-    // cola de pelo lateral
-    ctx.fillStyle='#4e3220'; rr(cx+6,hy-4,4,16,3); ctx.fill();
-    drawCrown(cx,hy-8);
+    ctx.fillStyle='#f1c9a0'; ctx.beginPath();ctx.arc(cx,hy,8.4,0,7);ctx.fill();
+    ctx.fillStyle='#4d3220'; ctx.beginPath();ctx.arc(cx,hy-2,8.6,Math.PI,0);ctx.fill();
+    ctx.strokeStyle='#e0b34a'; ctx.lineWidth=1.3;
+    ctx.beginPath();ctx.arc(cx-3.2,hy+1,2.7,0,7);ctx.stroke();
+    ctx.beginPath();ctx.arc(cx+3.2,hy+1,2.7,0,7);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx-0.5,hy+1);ctx.lineTo(cx+0.5,hy+1);ctx.stroke();
+    ctx.fillStyle='#2a1a12'; ctx.fillRect(cx-3.8,hy+0.4,1.4,1.4); ctx.fillRect(cx+2.4,hy+0.4,1.4,1.4);
+    ctx.strokeStyle='#b25a52'; ctx.lineWidth=1; ctx.beginPath();ctx.arc(cx,hy+4,2.2,0.15*Math.PI,0.85*Math.PI);ctx.stroke();
   }
-  if(hammer>0){ ctx.font='14px serif'; ctx.fillText('🔨',cx+6,20); }
   ctx.restore();
-  // aura martillo
-  if(hammer>0){ ctx.save(); ctx.globalAlpha=0.5+0.3*Math.sin(tick*0.4); ctx.strokeStyle='#ffd166'; ctx.lineWidth=2;
-    ctx.beginPath();ctx.arc(pl.x+P_W/2,pl.y+P_H*0.5,20,0,7);ctx.stroke(); ctx.restore(); }
-  // ⭐ aura de estrella (invencible, arcoíris)
+
+  // ---- auras de power-ups ----
+  const acx=pl.x+P_W/2, acy=pl.y+P_H*0.55;
+  if(hammer>0){ ctx.save(); ctx.globalAlpha=0.5+0.3*Math.sin(tick*0.4); ctx.strokeStyle='#f4b942'; ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(acx,acy,23,0,7);ctx.stroke(); ctx.restore(); }
   if(star>0){ ctx.save(); const hue=(tick*9)%360;
     ctx.globalAlpha=0.55+0.25*Math.sin(tick*0.5);
     ctx.strokeStyle='hsl('+hue+',95%,65%)'; ctx.lineWidth=3;
-    ctx.beginPath();ctx.arc(pl.x+P_W/2,pl.y+P_H*0.5,21,0,7);ctx.stroke();
-    ctx.globalAlpha=0.25; ctx.fillStyle='hsl('+hue+',95%,65%)';
-    ctx.beginPath();ctx.arc(pl.x+P_W/2,pl.y+P_H*0.5,21,0,7);ctx.fill(); ctx.restore();
-    if(tick%3===0)addStars(pl.x+P_W/2,pl.y+P_H*0.6,1); }
-  // 🍄 estela de turbo
-  if(turbo>0){ ctx.save(); ctx.globalAlpha=0.35+0.2*Math.sin(tick*0.6); ctx.strokeStyle='#7ad6ff'; ctx.lineWidth=2;
-    ctx.beginPath();ctx.arc(pl.x+P_W/2,pl.y+P_H*0.5,17,0,7);ctx.stroke(); ctx.restore(); }
+    ctx.beginPath();ctx.arc(acx,acy,25,0,7);ctx.stroke();
+    ctx.globalAlpha=0.2; ctx.fillStyle='hsl('+hue+',95%,65%)';
+    ctx.beginPath();ctx.arc(acx,acy,25,0,7);ctx.fill(); ctx.restore();
+    if(tick%3===0)addStars(acx,acy+4,1); }
+  if(turbo>0){ ctx.save(); ctx.globalAlpha=0.35+0.2*Math.sin(tick*0.6); ctx.strokeStyle='#38bdf8'; ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(acx,acy,20,0,7);ctx.stroke(); ctx.restore(); }
 }
-function drawCrown(cx,cy){ // corona dorada de princesa
-  ctx.fillStyle='#ffd23f'; ctx.strokeStyle='#c8930f'; ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.moveTo(cx-7,cy+3); ctx.lineTo(cx-7,cy-2); ctx.lineTo(cx-3.5,cy+0.5); ctx.lineTo(cx,cy-4);
-  ctx.lineTo(cx+3.5,cy+0.5); ctx.lineTo(cx+7,cy-2); ctx.lineTo(cx+7,cy+3); ctx.closePath();
-  ctx.fill(); ctx.stroke();
-  ctx.fillStyle='#8ef0ff'; ctx.beginPath();ctx.arc(cx,cy+1,1.3,0,7);ctx.fill();
-  ctx.fillStyle='#ff7ab5'; ctx.beginPath();ctx.arc(cx-4.6,cy+1.4,1,0,7);ctx.arc(cx+4.6,cy+1.4,1,0,7);ctx.fill(); }
+function drawRuneTablet(x,y){ // tablet holográfica ámbar con runas
+  const fl=0.82+0.18*Math.sin(tick*0.18);
+  ctx.save(); ctx.translate(x,y); ctx.rotate(-0.22);
+  ctx.globalAlpha=0.3*fl; ctx.fillStyle='#f4b942';
+  ctx.beginPath();ctx.ellipse(0,0,11,8,0,0,7);ctx.fill();
+  ctx.globalAlpha=0.85*fl;
+  ctx.fillStyle='rgba(244,185,66,.42)'; ctx.strokeStyle='#ffd98a'; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(-7,-5);ctx.lineTo(7,-4);ctx.lineTo(6,5);ctx.lineTo(-8,4);ctx.closePath();
+  ctx.fill();ctx.stroke();
+  ctx.strokeStyle='#fff3d0'; ctx.lineWidth=0.7; ctx.globalAlpha=fl;
+  ctx.beginPath();ctx.arc(0,0,2.6,0,7);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-5,-2);ctx.lineTo(-2,-2);ctx.moveTo(-5,1);ctx.lineTo(-3,1);
+  ctx.moveTo(3,-2);ctx.lineTo(5,-2);ctx.moveTo(2,2);ctx.lineTo(5,2);ctx.stroke();
+  ctx.restore(); ctx.globalAlpha=1; }
 function drawLimb(x1,y1,x2,y2,w,col,shoe){ ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
   ctx.fillStyle=shoe; ctx.beginPath();ctx.ellipse(x2,y2,3.4,2.4,0,0,7);ctx.fill(); }
@@ -762,82 +863,139 @@ function drawLimb(x1,y1,x2,y2,w,col,shoe){ ctx.strokeStyle=col; ctx.lineWidth=w;
 /* ------- SKIN: HECHICERO 🧙 (tú) ------- */
 function drawGorilla(){
   const bx=boss.x,by=boss.y+boss.sway; const beat=boss.beat>0?Math.sin(tick*0.7)*3:0;
-  const raise=boss.throw>0?-10:0;
+  const raise=boss.throw>0?-14:0;
+  const CY='#38bdf8', CY_D='#0ea5e9', BLK='#12161d', BLK_HI='#242c38';
   ctx.save(); ctx.translate(bx,by);
   // sombra
-  ctx.fillStyle='#00000040'; ctx.beginPath();ctx.ellipse(24,54,26,6,0,0,7);ctx.fill();
-  // túnica larga morada
-  const rob='#4b2a8a', rob2='#6b3fc0';
-  ctx.fillStyle=rob; ctx.beginPath();
-  ctx.moveTo(24,16); ctx.lineTo(44,52); ctx.quadraticCurveTo(24,58,4,52); ctx.closePath(); ctx.fill();
-  // brillo de la túnica + estrellas
-  ctx.fillStyle=rob2; ctx.beginPath();
-  ctx.moveTo(24,18); ctx.lineTo(33,50); ctx.quadraticCurveTo(24,53,17,50); ctx.closePath(); ctx.fill();
-  ctx.fillStyle='#ffe98a';
-  for(const s of [[14,40],[33,44],[24,34],[38,36]]){ ctx.save();ctx.translate(s[0],s[1]);
-    ctx.beginPath();for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*0.8;ctx.lineTo(Math.cos(a)*2.6,Math.sin(a)*2.6);}ctx.closePath();ctx.fill();ctx.restore(); }
-  // cinturón
-  ctx.fillStyle='#2a1560'; ctx.fillRect(13,32,22,4);
-  ctx.fillStyle='#ffd23f'; ctx.fillRect(21,32,6,4);
-  // brazo izq (con orbe mágico cargando)
-  ctx.strokeStyle=rob; ctx.lineCap='round'; ctx.lineWidth=8;
-  ctx.beginPath();ctx.moveTo(12,24);ctx.lineTo(4+beat,36);ctx.stroke();
-  // brazo der (lanza el hechizo) + báculo
-  ctx.beginPath();ctx.moveTo(36,24);ctx.lineTo(44,30+raise);ctx.stroke();
-  ctx.strokeStyle='#8a5a2a'; ctx.lineWidth=3;
-  ctx.beginPath();ctx.moveTo(46,14+raise);ctx.lineTo(43,44);ctx.stroke();
-  // gema del báculo (brilla al lanzar)
-  const gl=boss.throw>0?1:0.6;
-  ctx.globalAlpha=gl; ctx.fillStyle='#8ef0ff';
-  ctx.beginPath();ctx.arc(46,12+raise,5,0,7);ctx.fill();
-  ctx.globalAlpha=0.35; ctx.fillStyle='#8ef0ff'; ctx.beginPath();ctx.arc(46,12+raise,9,0,7);ctx.fill();
-  ctx.globalAlpha=1;
-  // proyectil cargado en la mano izq
-  if(boss.throw>0){ ctx.save(); ctx.translate(2+beat,34);
-    ctx.fillStyle='#c9a0ff'; ctx.beginPath();ctx.arc(0,0,7,0,7);ctx.fill();
-    ctx.globalAlpha=.4;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(-2,-2,3,0,7);ctx.fill(); ctx.restore(); }
-  // cabeza (tu cara) + sombrero de mago
+  ctx.fillStyle='#00000055'; ctx.beginPath();ctx.ellipse(24,54,26,6,0,0,7);ctx.fill();
+
+  // ---- capa hexagonal de energía (detrás) ----
+  ctx.save();
+  const flow=Math.sin(tick*0.05)*3;
+  ctx.globalAlpha=0.45;
+  ctx.fillStyle='rgba(56,189,248,.35)';
+  ctx.beginPath();
+  ctx.moveTo(30,16); ctx.quadraticCurveTo(52+flow,28,58+flow,52);
+  ctx.quadraticCurveTo(42,50,32,46); ctx.closePath(); ctx.fill();
+  // patrón hexagonal
+  ctx.globalAlpha=0.5; ctx.strokeStyle='#9fe0ff'; ctx.lineWidth=0.8;
+  for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+    const hx=36+c*8+r*4+flow*0.5, hy=26+r*9;
+    if(hx>58+flow)continue;
+    ctx.beginPath();
+    for(let i=0;i<6;i++){const a=i*Math.PI/3;ctx.lineTo(hx+Math.cos(a)*3.4,hy+Math.sin(a)*3.4);}
+    ctx.closePath(); ctx.stroke(); }
+  ctx.restore();
+
+  // ---- piernas / pantalón táctico ----
+  ctx.fillStyle=BLK; rr(14,36,8,17,3); ctx.fill(); rr(26,36,8,17,3); ctx.fill();
+  ctx.fillStyle=BLK_HI; rr(14,42,8,4,2); ctx.fill(); rr(26,42,8,4,2); ctx.fill(); // placas rodilla
+  ctx.fillStyle='#0a0d12'; rr(12,50,11,5,2.5); ctx.fill(); rr(25,50,11,5,2.5); ctx.fill(); // botas
+  ctx.fillStyle=CY; ctx.fillRect(14,53,7,1.2); ctx.fillRect(27,53,7,1.2); // luz suela
+
+  // ---- torso: chaqueta negra ----
+  ctx.fillStyle=BLK;
+  ctx.beginPath(); ctx.moveTo(24,14); ctx.lineTo(38,20); ctx.lineTo(36,40);
+  ctx.lineTo(12,40); ctx.lineTo(10,20); ctx.closePath(); ctx.fill();
+  // solapa/cierre abierto
+  ctx.fillStyle=BLK_HI;
+  ctx.beginPath(); ctx.moveTo(24,15); ctx.lineTo(32,20); ctx.lineTo(30,39); ctx.lineTo(24,39); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#0b3a52';
+  ctx.beginPath(); ctx.moveTo(24,15); ctx.lineTo(17,20); ctx.lineTo(19,39); ctx.lineTo(24,39); ctx.closePath(); ctx.fill();
+  // núcleo de plasma en el pecho
+  const pulse=0.75+0.25*Math.sin(tick*0.12);
+  ctx.globalAlpha=0.4*pulse; ctx.fillStyle=CY; ctx.beginPath();ctx.arc(24,25,8,0,7);ctx.fill();
+  ctx.globalAlpha=1; ctx.fillStyle=CY; ctx.beginPath();ctx.arc(24,25,3.4,0,7);ctx.fill();
+  ctx.fillStyle='#e6f7ff'; ctx.beginPath();ctx.arc(24,25,1.6,0,7);ctx.fill();
+  // cinturón utilitario
+  ctx.fillStyle='#1b2029'; ctx.fillRect(12,33,24,4);
+  ctx.fillStyle='#7a6a44'; ctx.fillRect(19,33,5,4); ctx.fillRect(27,33,4,4);
+  // bandolera
+  ctx.strokeStyle='#1b2029'; ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(15,18);ctx.lineTo(33,33);ctx.stroke();
+
+  // ---- brazos ----
+  ctx.strokeStyle=BLK; ctx.lineCap='round'; ctx.lineWidth=7;
+  ctx.beginPath();ctx.moveTo(13,21);ctx.lineTo(6+beat,33);ctx.stroke();   // izq
+  ctx.beginPath();ctx.moveTo(35,21);ctx.lineTo(42,30+raise);ctx.stroke(); // der (empuña)
+  ctx.strokeStyle=CY_D; ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(9+beat,28);ctx.lineTo(7+beat,32);ctx.stroke();
+
+  // ---- espadón de plasma ----
+  drawPlasmaSword(44,30+raise,raise?-0.55:-0.15);
+
+  // ---- carga de plasma en la mano izq al lanzar ----
+  if(boss.throw>0){ ctx.save(); ctx.translate(5+beat,32);
+    ctx.globalAlpha=.45;ctx.fillStyle=CY;ctx.beginPath();ctx.arc(0,0,10,0,7);ctx.fill();
+    ctx.globalAlpha=1;ctx.fillStyle='#bfeeff';ctx.beginPath();ctx.arc(0,0,5,0,7);ctx.fill();
+    ctx.restore(); }
+
+  // ---- cabeza (tu cara) + capucha ----
   if(heads.boss){
-    ctx.save();ctx.fillStyle='#00000033';ctx.beginPath();ctx.arc(24,7,15,0,7);ctx.fill();ctx.restore();
-    circleHead(heads.boss,24,6,14);
-    ctx.strokeStyle='#2a156088';ctx.lineWidth=2;ctx.beginPath();ctx.arc(24,6,14,0,7);ctx.stroke();
-    drawWizardHat(24,-6);
-    // barba blanca corta bajo la cara
-    ctx.fillStyle='#e9e4f5'; ctx.beginPath();
-    ctx.moveTo(14,13); ctx.quadraticCurveTo(24,30,34,13); ctx.quadraticCurveTo(24,20,14,13); ctx.fill();
+    drawHood(24,6);
+    circleHead(heads.boss,24,6,13);
+    ctx.strokeStyle='rgba(56,189,248,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(24,6,13,0,7);ctx.stroke();
+    drawHoodFront(24,6);
   } else {
-    ctx.fillStyle='#f1c9a0'; ctx.beginPath();ctx.arc(24,6,11,0,7);ctx.fill();
-    ctx.fillStyle='#1a1512'; ctx.fillRect(19,3,3,3); ctx.fillRect(27,3,3,3);
-    ctx.fillStyle='#e9e4f5'; ctx.beginPath();
-    ctx.moveTo(15,10); ctx.quadraticCurveTo(24,30,33,10); ctx.quadraticCurveTo(24,18,15,10); ctx.fill();
-    drawWizardHat(24,-4);
+    drawHood(24,6);
+    ctx.fillStyle='#e0b58c'; ctx.beginPath();ctx.arc(24,6,11,0,7);ctx.fill();
+    ctx.fillStyle='#14100c'; ctx.fillRect(19,3,3,3); ctx.fillRect(27,3,3,3);
+    ctx.fillStyle='#2a231c'; ctx.beginPath();ctx.arc(24,12,6,0,Math.PI);ctx.fill();
+    drawHoodFront(24,6);
   }
   ctx.restore();
 }
-function drawWizardHat(cx,cy){ // sombrero puntiagudo con estrellas
-  ctx.fillStyle='#3a1f74';
-  ctx.beginPath(); ctx.moveTo(cx-15,cy+6); ctx.quadraticCurveTo(cx-4,cy-6,cx+2,cy-22);
-  ctx.quadraticCurveTo(cx+9,cy-4,cx+15,cy+6); ctx.quadraticCurveTo(cx,cy+11,cx-15,cy+6); ctx.fill();
-  ctx.fillStyle='#2a1560'; ctx.beginPath();ctx.ellipse(cx,cy+6,17,4.5,0,0,7);ctx.fill();
-  ctx.fillStyle='#ffd23f'; ctx.fillRect(cx-9,cy+1,18,3);
-  ctx.fillStyle='#ffe98a';
-  for(const s of [[cx-4,cy-4],[cx+4,cy-11]]){ ctx.save();ctx.translate(s[0],s[1]);
-    ctx.beginPath();for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*0.8;ctx.lineTo(Math.cos(a)*2.4,Math.sin(a)*2.4);}ctx.closePath();ctx.fill();ctx.restore(); } }
+function drawHood(cx,cy){ // capucha levantada por detrás
+  ctx.fillStyle='#0e1319';
+  ctx.beginPath(); ctx.arc(cx,cy-1,17,Math.PI*0.92,Math.PI*0.08); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#0b3a52';
+  ctx.beginPath(); ctx.arc(cx,cy-1,15,Math.PI*0.95,Math.PI*0.05); ctx.closePath(); ctx.fill(); }
+function drawHoodFront(cx,cy){ // borde de la capucha sobre los hombros
+  ctx.fillStyle='#12161d';
+  ctx.beginPath();
+  ctx.moveTo(cx-17,cy+2); ctx.quadraticCurveTo(cx-13,cy+16,cx-6,cy+15);
+  ctx.lineTo(cx-9,cy+3); ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx+17,cy+2); ctx.quadraticCurveTo(cx+13,cy+16,cx+6,cy+15);
+  ctx.lineTo(cx+9,cy+3); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='rgba(56,189,248,.5)'; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(cx-15,cy+4);ctx.lineTo(cx-8,cy+13);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx+15,cy+4);ctx.lineTo(cx+8,cy+13);ctx.stroke(); }
+function drawPlasmaSword(x,y,rot){ // espadón de energía azul
+  ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
+  // empuñadura
+  ctx.strokeStyle='#1b2029'; ctx.lineWidth=4; ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(0,6);ctx.lineTo(0,-2);ctx.stroke();
+  ctx.fillStyle='#2a323d'; rr(-5,-5,10,4,1.5); ctx.fill(); // guarda
+  // hoja
+  const pl=0.8+0.2*Math.sin(tick*0.15);
+  ctx.globalAlpha=0.32*pl; ctx.fillStyle='#38bdf8';
+  ctx.beginPath();ctx.moveTo(-6,-5);ctx.lineTo(0,-46);ctx.lineTo(6,-5);ctx.closePath();ctx.fill();
+  ctx.globalAlpha=1;
+  const g=ctx.createLinearGradient(0,-46,0,-5);
+  g.addColorStop(0,'#eaf9ff'); g.addColorStop(.45,'#7dd8ff'); g.addColorStop(1,'#0ea5e9');
+  ctx.fillStyle=g;
+  ctx.beginPath();ctx.moveTo(-3,-5);ctx.lineTo(0,-44);ctx.lineTo(3,-5);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#e6faff'; ctx.lineWidth=0.9; ctx.globalAlpha=pl;
+  ctx.beginPath();ctx.moveTo(0,-42);ctx.lineTo(0,-7);ctx.stroke();
+  ctx.globalAlpha=1; ctx.restore(); }
 /* ------- Enemigos (según el mundo) ------- */
 function drawBarrel(b){
   const kind = b.fast ? 'fire' : theme.enemy; // los rápidos siempre son bola de fuego
   if(kind==='goomba') return drawGoomba(b);
   if(kind==='fire') return drawFire(b);
-  // orbe mágico del hechicero
+  // orbe de plasma lanzado por su espada
   ctx.save(); ctx.translate(b.x,b.y);
-  ctx.globalAlpha=.3; ctx.fillStyle='#a06cff'; ctx.beginPath();ctx.arc(0,0,b.r+5,0,7);ctx.fill(); ctx.globalAlpha=1;
+  ctx.globalAlpha=.28; ctx.fillStyle='#38bdf8'; ctx.beginPath();ctx.arc(0,0,b.r+6,0,7);ctx.fill(); ctx.globalAlpha=1;
   const g=ctx.createRadialGradient(-b.r*0.3,-b.r*0.3,1,0,0,b.r);
-  g.addColorStop(0,'#f0e0ff'); g.addColorStop(.55,'#b07bff'); g.addColorStop(1,'#5b2ba8');
+  g.addColorStop(0,'#eafaff'); g.addColorStop(.5,'#5cc8f5'); g.addColorStop(1,'#0b6fa8');
   ctx.fillStyle=g; ctx.beginPath();ctx.arc(0,0,b.r,0,7);ctx.fill();
-  ctx.strokeStyle='#e0c6ff';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,0,b.r,0,7);ctx.stroke();
-  // chispitas orbitando
-  ctx.fillStyle='#ffe98a';
-  for(let i=0;i<3;i++){ const a=b.spin*1.4+i*2.1; ctx.beginPath();ctx.arc(Math.cos(a)*(b.r+4),Math.sin(a)*(b.r+4),1.5,0,7);ctx.fill(); }
+  ctx.strokeStyle='#bfeeff';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(0,0,b.r,0,7);ctx.stroke();
+  // anillo hexagonal girando (mismo lenguaje que su capa)
+  ctx.strokeStyle='rgba(191,238,255,.75)'; ctx.lineWidth=1;
+  ctx.beginPath();
+  for(let i=0;i<6;i++){const a=b.spin*0.6+i*Math.PI/3;ctx.lineTo(Math.cos(a)*(b.r+3.5),Math.sin(a)*(b.r+3.5));}
+  ctx.closePath(); ctx.stroke();
   ctx.restore();
 }
 function drawGoomba(b){ const x=b.x,y=b.y,r=b.r+1, wob=Math.sin(b.spin);
@@ -974,13 +1132,13 @@ document.getElementById('cancelBtn').onclick=()=>{show('startScreen');state='sta
 /* ---------- HUD panel inj/ loop ---------- */
 // HUD como barra de juego bajo el topbar
 const hud=document.createElement('div');
-hud.style.cssText="display:flex;gap:5px;font-family:'Press Start 2P',monospace;font-size:clamp(7px,2.1vw,10px);margin:1px 0;flex-wrap:wrap;justify-content:center;width:min(96vw,480px);";
-const cell="background:#241640;padding:5px 7px;border-radius:8px;white-space:nowrap";
-hud.innerHTML='<span style="'+cell+'">🏁<b id="level">1</b></span>'
-+'<span style="'+cell+'">PTS <b id="score">0</b></span>'
-+'<span style="'+cell+'">🪙<b id="coins">0</b></span>'
-+'<span style="'+cell+'" id="livesWrap"><b id="lives">❤️❤️❤️</b></span>'
-+'<span style="background:#3a1630;padding:5px 7px;border-radius:8px;white-space:nowrap">💖<b id="cElla">0</b> 💙<b id="cEl">0</b></span>';
+hud.id='hudbar';
+hud.innerHTML='<span class="chip"><span class="k">C</span><b id="level">1</b></span>'
++'<span class="chip"><span class="k">PTS</span><b id="score">0</b></span>'
++'<span class="chip">🪙<b id="coins">0</b></span>'
++'<span class="chip" id="livesWrap"><b id="lives">❤️❤️❤️</b></span>'
++'<span class="chip hers">💖<b id="cElla">0</b></span>'
++'<span class="chip his">💙<b id="cEl">0</b></span>';
 document.getElementById('wrap').insertBefore(hud,document.getElementById('stage'));
 
 /* ---------- Ajuste responsive del canvas (celular) ---------- */
