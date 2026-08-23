@@ -1043,18 +1043,22 @@ function mazeInit(){
   for(let i=0;i<n;i++){
     C3.h.push({
       i, c:spawn[i].c, r:spawn[i].r, x:0,y:0, dx:i===0?-1:0, dy:i===0?0:-1, prog:0,
-      home:corners[i], inHouse:i>0, release:i*[150,110,80][D], bob:i*1.7,
+      home:corners[i], inHouse:i>0, release:i*[170,110,60][D], bob:i*1.7,
       frightened:0, eyes:false, hue:HUNTERS[i].hue, col:HUNTERS[i].col
     });
     place(C3.h[i]);
   }
   /* Velocidades y ritmo */
-  C3.pspd=[1.85,1.95,2.05][D];
-  C3.hspd=[1.35,1.60,1.85][D];
-  C3.fright=[520,400,300][D];
+  C3.pspd=[1.85,1.95,2.10][D];
+  C3.hspd=[1.30,1.62,2.02][D];      // en SUPER casi te igualan: 96% de tu velocidad
+  C3.fright=[560,380,250][D];       // 9.3s / 6.3s / 4.2s de huida
   C3.phaseIdx=0; C3.phaseT=0;
-  C3.phases=[{m:'scatter',t:420},{m:'chase',t:1200},{m:'scatter',t:300},
-             {m:'chase',t:1500},{m:'scatter',t:240},{m:'chase',t:99999}];
+  /* Menos respiro y persecuciones mas largas segun sube el nivel */
+  C3.phases=[
+    [{m:'scatter',t:480},{m:'chase',t:900},{m:'scatter',t:400},{m:'chase',t:1100},{m:'scatter',t:340},{m:'chase',t:99999}],
+    [{m:'scatter',t:420},{m:'chase',t:1200},{m:'scatter',t:300},{m:'chase',t:1500},{m:'scatter',t:240},{m:'chase',t:99999}],
+    [{m:'scatter',t:280},{m:'chase',t:1700},{m:'scatter',t:180},{m:'chase',t:2100},{m:'scatter',t:130},{m:'chase',t:99999}]
+  ][D];
   C3.mode='scatter';
   C3.ready=110;           // cuenta atras inicial
   C3.inv=0; C3.combo=0;
@@ -1200,7 +1204,11 @@ function mazeUpdate(){
       h.c=C3.house.c; h.r=C3.house.r; h.prog=0; place(h); h.release=40; continue;
     }
 
-    let spd=C3.hspd;
+    /* Furia: al quedar pocas runas el cazador directo aprieta (como el original) */
+    const queda=1-(C3.eaten/C3.total);
+    const furia=(h.i===0&&queda<0.25)?(queda<0.10?1.22:1.11):1;
+    h.furia=furia>1;
+    let spd=C3.hspd*furia;
     if(h.eyes)spd=C3.hspd*2.2;
     else if(h.frightened>0)spd=C3.hspd*0.55;
     else if(tileAt(h.c,h.r)===' ')spd=C3.hspd*0.6;      // mas lentos en el tunel
@@ -1283,6 +1291,8 @@ function mazeDraw(){
     // anillo de identidad a los pies
     ctx.shadowBlur=10; ctx.strokeStyle=glow; ctx.lineWidth=2.4;
     ctx.beginPath();ctx.ellipse(h.x,h.y+cs*0.5,cs*0.42,cs*0.16,0,0,7);ctx.stroke();
+    if(h.furia&&!fr){ ctx.lineWidth=1.6; ctx.globalAlpha=.5+0.4*Math.sin(tick*0.5);
+      ctx.beginPath();ctx.ellipse(h.x,h.y+cs*0.5,cs*0.62,cs*0.24,0,0,7);ctx.stroke(); }
     ctx.restore();
     if(!kissing){
       ctx.save();
@@ -1304,6 +1314,13 @@ function mazeDraw(){
   if(C3.ready>0){
     ctx.font="700 22px 'Chakra Petch',sans-serif";
     ctx.fillStyle='#f4b942'; ctx.fillText(C3.ready>40?'¡PREPARADA!':'¡YA!', W/2, C3.oy+C3.cell*13.5);
+  }
+  /* barra que muestra cuanto queda de huida */
+  const frMax=C3.h.reduce(function(m,h){return Math.max(m,h.frightened);},0);
+  if(frMax>0){
+    const bw=C3.cols*cs*0.5, bx=W/2-bw/2, by=C3.oy+C3.rows*cs+20;
+    ctx.fillStyle='rgba(160,195,240,.18)'; rr(bx,by,bw,5,2.5); ctx.fill();
+    ctx.fillStyle='#4cd8f7'; rr(bx,by,bw*(frMax/C3.fright),5,2.5); ctx.fill();
   }
   if(C3.mode==='scatter'&&C3.ready<=0){
     ctx.font="700 10px 'Chakra Petch',sans-serif"; ctx.fillStyle='rgba(160,195,240,.6)';
