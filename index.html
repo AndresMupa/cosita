@@ -51,10 +51,12 @@
   #stage{position:relative; flex:0 1 auto; filter:drop-shadow(0 18px 42px rgba(0,0,0,.65));}
   canvas{display:block; max-width:96vw; border:1px solid var(--line); border-radius:18px; background:var(--bg0);}
   .overlay{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; text-align:center; gap:12px; padding:16px; overflow:auto;
+    justify-content:safe center; text-align:center; gap:12px; padding:16px; overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
     background:rgba(7,11,22,.68); backdrop-filter:blur(16px) saturate(1.2);
     border-radius:18px; animation:fade .28s cubic-bezier(.2,.8,.3,1);}
   @keyframes fade{from{opacity:0}to{opacity:1}}
+  @supports not (justify-content:safe center){ .overlay{justify-content:flex-start;} .overlay>.card{margin:auto 0;} }
   .hidden{display:none !important;}
   .card{position:relative; background:var(--panel); border:1px solid var(--line);
     border-radius:22px; padding:20px 18px; max-width:360px; width:100%;
@@ -147,6 +149,34 @@
   .consent{font-size:11px;opacity:.75;font-style:italic;}
   .btn.gold{background:linear-gradient(180deg,#ffdc8a,#e9a92f); color:#3a2400;
     box-shadow:0 8px 22px rgba(244,185,66,.35), inset 0 1px 0 rgba(255,255,255,.5);}
+  /* --- editor de skins --- */
+  .tabs{display:flex;gap:6px;width:100%;}
+  .tab{flex:1;padding:9px;border-radius:12px;border:1px solid var(--line);background:var(--glass);
+    color:var(--txt-dim);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:12px;
+    letter-spacing:.05em;cursor:pointer;transition:.18s;}
+  .tab.on{background:rgba(56,189,248,.18);border-color:rgba(56,189,248,.5);color:var(--txt);}
+  .skingrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:100%;}
+  .skincell{position:relative;aspect-ratio:.8;border-radius:12px;border:1px solid var(--line);
+    background:rgba(7,11,22,.5) center/70% no-repeat;cursor:pointer;transition:.18s;overflow:hidden;}
+  .skincell:hover{border-color:rgba(56,189,248,.5);}
+  .skincell.on{border-color:var(--amber);box-shadow:0 0 0 2px rgba(244,185,66,.28), 0 0 18px rgba(244,185,66,.22);}
+  .skincell .nm{position:absolute;left:0;right:0;bottom:0;font-size:8.5px;text-align:center;
+    background:rgba(7,11,22,.8);color:var(--txt-dim);padding:2px 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .skincell.add{display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--txt-dim);
+    border-style:dashed;}
+  .presets{display:flex;gap:5px;flex-wrap:wrap;width:100%;justify-content:center;}
+  .pchip{padding:5px 9px;border-radius:9px;border:1px solid var(--line);background:var(--glass);
+    font-size:11px;font-weight:600;color:var(--txt-dim);cursor:pointer;}
+  .pchip:hover{color:var(--txt);border-color:rgba(56,189,248,.45);}
+  .slider{display:flex;align-items:center;gap:8px;width:100%;font-size:10.5px;color:var(--txt-dim);}
+  .slider span{width:66px;font-family:'Chakra Petch',sans-serif;font-weight:700;letter-spacing:.04em;}
+  .slider input[type=range]{flex:1;accent-color:var(--cyan);}
+  .slider b{width:34px;text-align:right;font-variant-numeric:tabular-nums;color:var(--txt);}
+  .skinname{width:100%;padding:7px 10px;border-radius:11px;border:1px solid var(--line);
+    background:rgba(7,11,22,.6);color:var(--txt);font-family:inherit;font-size:13px;}
+  .skinname:focus{outline:none;border-color:rgba(56,189,248,.5);}
+  .skinprev{width:78px;height:90px;border-radius:14px;border:1px solid var(--line);
+    background:rgba(56,189,248,.06) center/contain no-repeat;}
   /* controles */
   #touch{display:none; width:min(96vw,480px); padding:2px 4px calc(4px + env(safe-area-inset-bottom));
     justify-content:space-between; align-items:center; flex:0 0 auto; gap:8px;}
@@ -210,7 +240,7 @@
         <div class="games" id="gameList"></div>
         <p class="hint" id="totLine">Premios de ella: <b>0</b> &nbsp;·&nbsp; Penitencias: <b>0</b></p>
         <button class="btn" id="startBtn">Torneo completo</button>
-        <button class="btn alt small" id="editBtn">Editar cartas</button>
+        <div class="row"><button class="btn alt small" id="skinBtn">Skins</button><button class="btn alt small" id="editBtn">Cartas</button></div>
       </div>
     </div>
 
@@ -282,6 +312,32 @@
         <h2 class="title">Pausa</h2>
         <button class="btn" id="resumeBtn">Continuar</button>
         <button class="btn alt small" id="quitBtn">Salir al menú</button>
+      </div>
+    </div>
+
+    <!-- Editor de skins -->
+    <div id="skinScreen" class="overlay hidden">
+      <div class="card" style="gap:9px;padding:16px 14px">
+        <h2 class="title">Skins</h2>
+        <div class="tabs">
+          <button class="tab on" id="tabHer">ELLA</button>
+          <button class="tab" id="tabHim">EL</button>
+        </div>
+        <div class="skinprev" id="skinPrev"></div>
+        <div class="skingrid" id="skinGrid"></div>
+        <input class="skinname" id="skinName" maxlength="18" placeholder="Nombre del skin">
+        <div class="presets" id="skinPresets"></div>
+        <div class="slider"><span>TONO</span><input type="range" id="sHue" min="0" max="360" value="0"><b id="vHue">0</b></div>
+        <div class="slider"><span>COLOR</span><input type="range" id="sSat" min="0" max="240" value="100"><b id="vSat">100</b></div>
+        <div class="slider"><span>BRILLO</span><input type="range" id="sBri" min="40" max="180" value="100"><b id="vBri">100</b></div>
+        <div class="slider"><span>AURA</span><input type="range" id="sGlow" min="0" max="360" value="0"><b id="vGlow">off</b></div>
+        <div class="row">
+          <button class="btn small" id="skinNew">Nueva foto</button>
+          <button class="btn alt small" id="skinDup">Duplicar</button>
+          <button class="btn alt small" id="skinDel">Borrar</button>
+        </div>
+        <button class="btn" id="skinDone">Listo</button>
+        <input type="file" id="skinFile" accept="image/*" style="display:none">
       </div>
     </div>
 
@@ -360,7 +416,7 @@ const DEFAULT_ELLA=[
   "Una ronda con ojos vendados donde ella debe adivinar qué tipo de caricia recibe",
   "Premio mayor: ella diseña la experiencia completa de la noche dentro de los límites acordados"
 ];
-const K={pen:"ad_pen",ella:"ad_ella",hero:"ad_hero",boss:"ad_boss",mute:"ad_mute",tot:"ad_tot",best:"ad_best",prog:"ad_prog"};
+const K={pen:"ad_pen",ella:"ad_ella",hero:"ad_hero",boss:"ad_boss",mute:"ad_mute",tot:"ad_tot",best:"ad_best",prog:"ad_prog",skins:"ad_skins"};
 const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v;}catch(e){return d;}},
           set(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
 function loadList(key,def){try{const a=JSON.parse(ls.get(key,"null"));if(Array.isArray(a)&&a.length)return a;}catch(e){}return def.slice();}
@@ -471,17 +527,167 @@ function handleFile(input,key,slot){
 document.getElementById('fileHero').addEventListener('change',e=>handleFile(e.target,K.hero,'her'));
 document.getElementById('fileBoss').addEventListener('change',e=>handleFile(e.target,K.boss,'him'));
 
+
+/* ==========================================================
+   SKINS editables (por personaje: lista, filtros y aura)
+   ========================================================== */
+const PRESETS=[
+  {n:'Original', hue:0,   sat:100, bri:100, glow:-1},
+  {n:'Neón',     hue:190, sat:170, bri:118, glow:190},
+  {n:'Retro',    hue:28,  sat:62,  bri:106, glow:-1},
+  {n:'Sombra',   hue:220, sat:35,  bri:62,  glow:265},
+  {n:'Dorado',   hue:38,  sat:150, bri:118, glow:45},
+  {n:'Espectro', hue:290, sat:145, bri:104, glow:300},
+  {n:'Fuego',    hue:350, sat:165, bri:110, glow:12},
+  {n:'Hielo',    hue:165, sat:120, bri:120, glow:200}
+];
+function blankSkins(){
+  return {
+    her:{active:0,list:[{name:'Original',src:null,hue:0,sat:100,bri:100,glow:-1}]},
+    him:{active:0,list:[{name:'Original',src:null,hue:0,sat:100,bri:100,glow:-1}]}
+  };
+}
+let skins;
+try{ skins=JSON.parse(ls.get(K.skins,"null")); }catch(e){ skins=null; }
+function validSkins(o){
+  if(!o||!o.her||!o.him)return false;
+  for(const k of ['her','him']){ if(!Array.isArray(o[k].list)||!o[k].list.length)return false; }
+  return true;
+}
+if(!validSkins(skins)) skins=blankSkins();
+function saveSkins(){
+  try{ ls.set(K.skins,JSON.stringify(skins)); return true; }catch(e){ return false; }
+}
+function activeSkin(slot){ const S=skins[slot]; return S.list[Math.min(S.active,S.list.length-1)]; }
+/* Filtro CSS aplicado al avatar */
+const CANFILTER=(function(){ try{ const c=document.createElement('canvas').getContext('2d');
+  c.filter='hue-rotate(10deg)'; return c.filter!=='none'; }catch(e){ return false; } })();
+function skinFilter(sk){
+  if(!sk)return 'none';
+  if(sk.hue===0&&sk.sat===100&&sk.bri===100)return 'none';
+  return 'hue-rotate('+sk.hue+'deg) saturate('+sk.sat+'%) brightness('+sk.bri+'%)';
+}
+/* Imagen del skin activo (o el sprite base del personaje) */
+const SKINIMG={};
+function skinImageFor(slot){
+  const sk=activeSkin(slot);
+  if(!sk.src) return SPR[slot];
+  const key=slot+'#'+skins[slot].active;
+  if(SKINIMG[key]&&SKINIMG[key].src===sk.src) return SKINIMG[key].img;
+  const im=new Image(); im.src=sk.src;
+  SKINIMG[key]={src:sk.src,img:im};
+  return im;
+}
+
+/* ---------- Editor ---------- */
+let skinTab='her';
+function skinThumb(slot,sk){
+  const src=sk.src||(SPR[slot]?SPR[slot].src:'');
+  return src;
+}
+function renderSkins(){
+  const S=skins[skinTab];
+  document.getElementById('tabHer').classList.toggle('on',skinTab==='her');
+  document.getElementById('tabHim').classList.toggle('on',skinTab==='him');
+  const grid=document.getElementById('skinGrid'); grid.innerHTML='';
+  S.list.forEach((sk,i)=>{
+    const d=document.createElement('div');
+    d.className='skincell'+(i===S.active?' on':'');
+    const src=skinThumb(skinTab,sk);
+    if(src)d.style.backgroundImage='url('+src+')';
+    if(CANFILTER)d.style.filter=skinFilter(sk);
+    d.innerHTML='<span class="nm">'+(sk.name||('Skin '+(i+1)))+'</span>';
+    d.onclick=()=>{ S.active=i; saveSkins(); renderSkins(); A.sfx('blip'); };
+    grid.appendChild(d);
+  });
+  if(S.list.length<8){
+    const add=document.createElement('div');
+    add.className='skincell add'; add.textContent='+';
+    add.onclick=()=>document.getElementById('skinFile').click();
+    grid.appendChild(add);
+  }
+  const sk=activeSkin(skinTab);
+  const prev=document.getElementById('skinPrev');
+  const psrc=skinThumb(skinTab,sk);
+  prev.style.backgroundImage=psrc?'url('+psrc+')':'';
+  if(CANFILTER)prev.style.filter=skinFilter(sk);
+  prev.style.boxShadow = sk.glow>=0 ? ('0 0 26px hsla('+sk.glow+',90%,60%,.55)') : 'none';
+  document.getElementById('skinName').value=sk.name||'';
+  const set=(id,v)=>{document.getElementById(id).value=v;};
+  set('sHue',sk.hue); set('sSat',sk.sat); set('sBri',sk.bri); set('sGlow',sk.glow<0?0:sk.glow);
+  document.getElementById('vHue').textContent=sk.hue;
+  document.getElementById('vSat').textContent=sk.sat;
+  document.getElementById('vBri').textContent=sk.bri;
+  document.getElementById('vGlow').textContent=sk.glow<0?'off':sk.glow;
+  document.getElementById('skinDel').style.display=S.list.length>1?'':'none';
+}
+function renderPresets(){
+  const w=document.getElementById('skinPresets'); w.innerHTML='';
+  PRESETS.forEach(pr=>{
+    const b=document.createElement('button'); b.className='pchip'; b.textContent=pr.n;
+    b.onclick=()=>{ const sk=activeSkin(skinTab);
+      sk.hue=pr.hue; sk.sat=pr.sat; sk.bri=pr.bri; sk.glow=pr.glow;
+      saveSkins(); renderSkins(); A.sfx('coin'); };
+    w.appendChild(b);
+  });
+}
+function bindSkinUI(){
+  document.getElementById('tabHer').onclick=()=>{skinTab='her';renderSkins();};
+  document.getElementById('tabHim').onclick=()=>{skinTab='him';renderSkins();};
+  document.getElementById('skinName').oninput=e=>{ activeSkin(skinTab).name=e.target.value.slice(0,18); saveSkins(); };
+  const bindS=(id,prop,label)=>{ document.getElementById(id).oninput=e=>{
+    const v=parseInt(e.target.value,10); const sk=activeSkin(skinTab);
+    sk[prop]= (prop==='glow'&&v===0) ? -1 : v;
+    document.getElementById(label).textContent=(prop==='glow'&&v===0)?'off':v;
+    saveSkins(); renderSkins(); }; };
+  bindS('sHue','hue','vHue'); bindS('sSat','sat','vSat');
+  bindS('sBri','bri','vBri'); bindS('sGlow','glow','vGlow');
+  document.getElementById('skinDup').onclick=()=>{ const S=skins[skinTab];
+    if(S.list.length>=8)return; const c=JSON.parse(JSON.stringify(activeSkin(skinTab)));
+    c.name=(c.name||'Skin')+' 2'; S.list.push(c); S.active=S.list.length-1; saveSkins(); renderSkins(); };
+  document.getElementById('skinDel').onclick=()=>{ const S=skins[skinTab];
+    if(S.list.length<=1)return; S.list.splice(S.active,1);
+    S.active=Math.max(0,S.active-1); saveSkins(); renderSkins(); A.sfx('hit'); };
+  document.getElementById('skinNew').onclick=()=>document.getElementById('skinFile').click();
+  document.getElementById('skinFile').addEventListener('change',e=>{
+    const f=e.target.files&&e.target.files[0]; if(!f)return;
+    const fr=new FileReader();
+    fr.onload=()=>{ const im=new Image();
+      im.onload=()=>{
+        const S=skins[skinTab];
+        let data=null;
+        for(const Hh of [128,104,84,64]){ data=spriteFromImage(im,Hh);
+          const test={name:'Nuevo',src:data,hue:0,sat:100,bri:100,glow:-1};
+          S.list.push(test); S.active=S.list.length-1;
+          if(saveSkins())break;
+          S.list.pop(); S.active=Math.max(0,S.list.length-1); data=null; }
+        if(!data){ alert('No hay espacio para guardar el skin. Borra alguno e intenta de nuevo.'); }
+        renderSkins();
+      };
+      im.onerror=()=>alert('No se pudo leer esa imagen.');
+      im.src=fr.result; };
+    fr.readAsDataURL(f); e.target.value='';
+  });
+  document.getElementById('skinDone').onclick=()=>{ show('startScreen'); state='menu'; };
+  document.getElementById('skinBtn').onclick=()=>{ skinTab='her'; renderPresets(); renderSkins();
+    show('skinScreen'); state='skins'; };
+}
+bindSkinUI();
+
 /* ---------- Canvas ---------- */
 const cv=document.getElementById('game'), ctx=cv.getContext('2d');
 const W=cv.width, H=cv.height;
 
 /* Dibuja un avatar: (cx, baseY) = centro-abajo; h = alto en px */
 function drawAvatar(slot,cx,baseY,h,flip,sx,sy,alpha){
-  const img=SPR[slot];
-  if(!img){ drawFallback(slot,cx,baseY,h,flip,sx,sy,alpha); return; }
-  const w=h*SPR[slot+'W'];
+  const sk=activeSkin(slot);
+  const img=skinImageFor(slot);
+  if(!img||!img.complete||!img.naturalWidth){ drawFallback(slot,cx,baseY,h,flip,sx,sy,alpha); return; }
+  const w=h*(img.naturalWidth/img.naturalHeight);
   ctx.save();
   if(alpha!=null)ctx.globalAlpha=alpha;
+  if(sk&&sk.glow>=0){ ctx.shadowColor='hsla('+sk.glow+',95%,62%,.85)'; ctx.shadowBlur=18; }
+  if(CANFILTER){ const f=skinFilter(sk); if(f!=='none')ctx.filter=f; }
   ctx.translate(cx,baseY);
   ctx.scale((flip?-1:1)*(sx||1),(sy||1));
   ctx.drawImage(img,-w/2,-h,w,h);
@@ -515,7 +721,8 @@ function drawFallback(slot,cx,baseY,h,flip,sx,sy,alpha){
   ctx.fillRect(-h*0.07,-h*0.80,h*0.03,h*0.035); ctx.fillRect(h*0.04,-h*0.80,h*0.03,h*0.035);
   ctx.restore(); ctx.globalAlpha=1;
 }
-function avatarW(slot,h){ return SPR[slot]?h*SPR[slot+'W']:h*0.55; }
+function avatarW(slot,h){ const im=skinImageFor(slot);
+  return (im&&im.complete&&im.naturalWidth)?h*(im.naturalWidth/im.naturalHeight):h*0.55; }
 
 /* ---------- Estado global ---------- */
 let state="menu";           // menu | play | peni | win | over | pause | edit | kiss
@@ -1431,7 +1638,7 @@ function updateHud(){
   document.getElementById('cEl').textContent=cards.el;
 }
 function updateScore(){ document.getElementById('score').textContent=scoreShown; }
-const screens=['startScreen','diffScreen','peniScreen','levelScreen','prizeScreen','overScreen','pauseScreen','editScreen'];
+const screens=['startScreen','diffScreen','peniScreen','levelScreen','prizeScreen','overScreen','pauseScreen','editScreen','skinScreen'];
 function hideAll(){ screens.forEach(s=>document.getElementById(s).classList.add('hidden')); }
 function show(id){ hideAll(); document.getElementById(id).classList.remove('hidden');
   if(id==='startScreen'){ document.getElementById('totLine').innerHTML='Premios de ella: <b>'+total.ella+'</b> &nbsp;·&nbsp; Penitencias: <b>'+total.el+'</b>'; } }
