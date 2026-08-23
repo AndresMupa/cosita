@@ -978,161 +978,343 @@ function drawDrone(x,y,r){
 }
 
 /* ==========================================================
-   JUEGO 3 — LABERINTO (Pac-Man: él la caza para comérsela)
+   JUEGO 3 — LABERINTO (Pac-Man de verdad)
+   Pasillos de 1 casilla, casa de fantasmas, tunel lateral,
+   ciclo dispersion/persecucion y 4 personalidades de caza.
    ========================================================== */
 const C3={};
 const MAZE=[
- "###############",
- "#......#......#",
- "#.##.#.#.#.##.#",
- "#.............#",
- "#.##.#.###.#.##",
- "#....#..#..#..#",
- "###.##.#.##.###",
- "#......#......#",
- "#.##.#####.##.#",
- "#..#....#....##",
- "##.#.##.#.##..#",
- "#....#.....#..#",
- "#.####.###.##.#",
- "#.............#",
- "###############"
+ "#####################",
+ "#.........#.........#",
+ "#o###.###.#.###.###o#",
+ "#.###.###.#.###.###.#",
+ "#...................#",
+ "#.###.#.#####.#.###.#",
+ "#.....#...#...#.....#",
+ "#####.###.#.###.#####",
+ "#####.#.......#.#####",
+ "#####.#.##-##.#.#####",
+ "     ...#HHH#...     ",
+ "#####.#.#####.#.#####",
+ "#####.#.......#.#####",
+ "#####.#.#####.#.#####",
+ "#.........#.........#",
+ "#.###.###.#.###.###.#",
+ "#o..#.....P.....#..o#",
+ "###.#.#.#####.#.#.###",
+ "#.....#...#...#.....#",
+ "#.#######.#.#######.#",
+ "#...................#",
+ "#.#################.#",
+ "#####################"
 ];
+/* Colores de los 4 cazadores, como los fantasmas clasicos */
+const HUNTERS=[
+  {hue:0,   col:'#ff4d4d', name:'directo'},   // persigue tu casilla
+  {hue:320, col:'#ff9ad4', name:'emboscada'}, // apunta 4 casillas delante
+  {hue:190, col:'#4cd8f7', name:'flanqueo'},  // vector desde el rojo
+  {hue:30,  col:'#ffa63d', name:'ronda'}
+];
+
 function mazeInit(){
-  const D=diff; // 0 fácil, 1 normal, 2 difícil
+  const D=diff;
   C3.cols=MAZE[0].length; C3.rows=MAZE.length;
-  C3.cell=Math.floor(Math.min(W/C3.cols,(H-96)/C3.rows));
+  C3.cell=Math.floor(Math.min(W/C3.cols,(H-92)/C3.rows));
   C3.ox=Math.floor((W-C3.cell*C3.cols)/2);
-  C3.oy=Math.floor((H-C3.cell*C3.rows)/2)+16;
+  C3.oy=Math.floor((H-C3.cell*C3.rows)/2)+14;
   C3.grid=MAZE.map(r=>r.split(''));
-  C3.dots=[];
+  C3.dots=[]; C3.eaten=0;
+  let start={c:10,r:16}, house={c:10,r:10};
   for(let r=0;r<C3.rows;r++)for(let c=0;c<C3.cols;c++){
-    if(C3.grid[r][c]==='.'){
-      const pw=((r===1||r===C3.rows-2)&&(c===1||c===C3.cols-2));
-      C3.dots.push({r,c,big:pw,eaten:false});
-    }}
-  C3.left=C3.dots.length;
-  C3.p={c:7,r:13,x:0,y:0,dx:0,dy:0,wx:0,wy:0,face:false};
-  cellCenter(C3.p);
-  // Cazadores: en difícil son dos (él + su sombra)
-  const n=(D===2)?2:1;
-  C3.hunters=[];
-  const starts=[[3,1],[11,1]];
-  for(let i=0;i<n;i++){
-    const h={c:starts[i][0],r:starts[i][1],x:0,y:0,dx:0,dy:0,scared:0,
-             kind:i===0?'chase':'ambush', lunge:0, home:starts[i]};
-    cellCenter(h); C3.hunters.push(h);
+    const ch=C3.grid[r][c];
+    if(ch==='.'||ch==='o') C3.dots.push({r,c,big:ch==='o',eaten:false});
+    if(ch==='P'){ start={c,r}; }
   }
-  C3.hspeed=[1.35,1.62,1.9][D];
-  C3.pspeed=[2.1,2.0,1.95][D];
-  C3.scareTime=[430,340,250][D];
-  C3.inv=60; C3.caught=0;
+  C3.total=C3.dots.length;
+  C3.house={c:10,r:10}; C3.door={c:10,r:9};
+  C3.start=start;
+  C3.p={c:start.c,r:start.r,x:0,y:0,dx:-1,dy:0,wx:-1,wy:0,prog:0,face:true,mouth:0};
+  place(C3.p);
+  /* Cazadores segun dificultad */
+  const n=[2,3,4][D];
+  C3.h=[];
+  const spawn=[{c:10,r:8},{c:9,r:10},{c:11,r:10},{c:10,r:10}];
+  const corners=[{c:19,r:1},{c:1,r:1},{c:19,r:21},{c:1,r:21}];
+  for(let i=0;i<n;i++){
+    C3.h.push({
+      i, c:spawn[i].c, r:spawn[i].r, x:0,y:0, dx:i===0?-1:0, dy:i===0?0:-1, prog:0,
+      home:corners[i], inHouse:i>0, release:i*[150,110,80][D], bob:i*1.7,
+      frightened:0, eyes:false, hue:HUNTERS[i].hue, col:HUNTERS[i].col
+    });
+    place(C3.h[i]);
+  }
+  /* Velocidades y ritmo */
+  C3.pspd=[1.85,1.95,2.05][D];
+  C3.hspd=[1.35,1.60,1.85][D];
+  C3.fright=[520,400,300][D];
+  C3.phaseIdx=0; C3.phaseT=0;
+  C3.phases=[{m:'scatter',t:420},{m:'chase',t:1200},{m:'scatter',t:300},
+             {m:'chase',t:1500},{m:'scatter',t:240},{m:'chase',t:99999}];
+  C3.mode='scatter';
+  C3.ready=110;           // cuenta atras inicial
+  C3.inv=0; C3.combo=0;
+  C3.fruit=null; C3.fruitT=0;
 }
-function cellCenter(o){ o.x=C3.ox+o.c*C3.cell+C3.cell/2; o.y=C3.oy+o.r*C3.cell+C3.cell/2; }
-function wallAt(c,r){ if(r<0||r>=C3.rows||c<0||c>=C3.cols)return true; return C3.grid[r][c]==='#'; }
-function atCenter(o){ const cx=C3.ox+o.c*C3.cell+C3.cell/2, cy=C3.oy+o.r*C3.cell+C3.cell/2;
-  return Math.abs(o.x-cx)<1.8&&Math.abs(o.y-cy)<1.8; }
-function snap(o){ o.x=C3.ox+o.c*C3.cell+C3.cell/2; o.y=C3.oy+o.r*C3.cell+C3.cell/2; }
+function tileAt(c,r){
+  if(r<0||r>=C3.rows) return '#';
+  c=((c%C3.cols)+C3.cols)%C3.cols;      // tunel
+  return C3.grid[r][c];
+}
+function blocked(c,r,who){
+  const t=tileAt(c,r);
+  if(t==='#') return true;
+  if(t==='-') return who!=='ghost';      // la puerta solo la cruzan ellos
+  if(t==='H') return who!=='ghost';
+  return false;
+}
+function centerX(c){ return C3.ox+c*C3.cell+C3.cell/2; }
+function centerY(r){ return C3.oy+r*C3.cell+C3.cell/2; }
+/* Posicion en pixeles a partir de casilla + avance hacia la siguiente */
+function place(o){
+  o.x=centerX(o.c)+o.dx*o.prog*C3.cell;
+  o.y=centerY(o.r)+o.dy*o.prog*C3.cell;
+}
+function wrapCell(o){
+  if(o.c<0)o.c+=C3.cols;
+  if(o.c>=C3.cols)o.c-=C3.cols;
+}
+/* Avanza una casilla completa; devuelve true si acaba de llegar a un centro */
+function step(o,spd){
+  if(!o.dx&&!o.dy){ place(o); return true; }
+  o.prog+=spd/C3.cell;
+  if(o.prog>=1){ o.c+=o.dx; o.r+=o.dy; o.prog=0; wrapCell(o); place(o); return true; }
+  place(o); return false;
+}
+/* Da la vuelta al instante, sin esperar al centro */
+function reverse(o){
+  o.c+=o.dx; o.r+=o.dy; wrapCell(o);
+  o.prog=1-o.prog; o.dx=-o.dx; o.dy=-o.dy; place(o);
+}
+
+/* ---------- objetivo de cada cazador ---------- */
+function hunterTarget(h){
+  const p=C3.p;
+  if(h.eyes) return C3.door;                       // vuelve a casa
+  if(h.frightened>0) return {c:h.home.c,r:h.home.r};
+  if(C3.mode==='scatter') return h.home;
+  switch(h.i){
+    case 0: return {c:p.c,r:p.r};                                  // directo
+    case 1: return {c:p.c+p.dx*4, r:p.r+p.dy*4};                   // emboscada
+    case 2: {                                                       // flanqueo
+      const a=C3.h[0]||h, m={c:p.c+p.dx*2,r:p.r+p.dy*2};
+      return {c:m.c+(m.c-a.c), r:m.r+(m.r-a.r)};
+    }
+    default: {                                                      // ronda
+      const d=Math.hypot(h.c-p.c,h.r-p.r);
+      return d>7 ? {c:p.c,r:p.r} : h.home;
+    }
+  }
+}
+function chooseDir(h){
+  const opts=[[0,-1],[-1,0],[0,1],[1,0]];          // orden clasico: arriba, izq, abajo, der
+  const back=[-h.dx,-h.dy];
+  const t=hunterTarget(h);
+  let best=null,bs=1e9;
+  for(const d of opts){
+    if(d[0]===back[0]&&d[1]===back[1])continue;    // no puede darse la vuelta
+    const nc=h.c+d[0], nr=h.r+d[1];
+    if(blocked(nc,nr,'ghost'))continue;
+    const dist=Math.hypot(nc-t.c,nr-t.r);
+    if(dist<bs){bs=dist;best=d;}
+  }
+  if(!best){ h.dx=back[0]; h.dy=back[1]; }
+  else { h.dx=best[0]; h.dy=best[1]; }
+  if(blocked(h.c+h.dx,h.r+h.dy,'ghost')){ h.dx=0; h.dy=0; }
+}
+
 function mazeUpdate(){
+  if(C3.ready>0){ C3.ready--; if(C3.ready===0)A.sfx('blip'); return; }
   if(C3.inv>0)C3.inv--;
   const p=C3.p;
+
+  /* --- ciclo dispersion / persecucion --- */
+  C3.phaseT++;
+  const ph=C3.phases[C3.phaseIdx];
+  if(C3.phaseT>=ph.t&&C3.phaseIdx<C3.phases.length-1){
+    C3.phaseIdx++; C3.phaseT=0; C3.mode=C3.phases[C3.phaseIdx].m;
+    for(const h of C3.h){ if(h.frightened<=0&&!h.eyes&&!h.inHouse&&h.release<=0)reverse(h); }  // se dan la vuelta al cambiar
+    A.sfx('blip');
+  }
+
+  /* --- jugadora: gira cuando puede, nunca se para --- */
   if(keys.left){p.wx=-1;p.wy=0;} else if(keys.right){p.wx=1;p.wy=0;}
   else if(keys.up){p.wx=0;p.wy=-1;} else if(keys.down){p.wx=0;p.wy=1;}
-  if(atCenter(p)){
-    snap(p);
-    if((p.wx||p.wy)&&!wallAt(p.c+p.wx,p.r+p.wy)){ p.dx=p.wx; p.dy=p.wy; }
-    if(wallAt(p.c+p.dx,p.r+p.dy)){ p.dx=0;p.dy=0; }
-    if(p.dx)p.face=p.dx<0;
-    for(const d of C3.dots){ if(!d.eaten&&d.r===p.r&&d.c===p.c){ d.eaten=true; C3.left--;
-      if(d.big){ for(const h of C3.hunters)h.scared=C3.scareTime;
-        addScore(50,p.x,p.y-14,"¡RUNA!",'#f4b942'); A.sfx('win'); }
-      else { addScore(10,p.x,p.y-12,null); A.sfx('coin'); }
-      if(C3.left<=0) return winGame(); } }
-  }
-  p.x+=p.dx*C3.pspeed; p.y+=p.dy*C3.pspeed;
-  if(p.dx&&Math.abs(p.x-(C3.ox+p.c*C3.cell+C3.cell/2))>=C3.cell*0.5)p.c+=p.dx;
-  if(p.dy&&Math.abs(p.y-(C3.oy+p.r*C3.cell+C3.cell/2))>=C3.cell*0.5)p.r+=p.dy;
+  /* dar la vuelta es inmediato, como en el original */
+  if((p.wx||p.wy)&&p.wx===-p.dx&&p.wy===-p.dy&&(p.dx||p.dy)&&p.prog>0){ reverse(p); }
 
-  /* --- Cazadores: persecución al estilo Pac-Man --- */
-  for(const h of C3.hunters){
-    if(h.scared>0)h.scared--;
-    if(h.lunge>0)h.lunge--;
-    if(atCenter(h)){
-      snap(h);
-      const opts=[[1,0],[-1,0],[0,1],[0,-1]].filter(d=>!wallAt(h.c+d[0],h.r+d[1]));
-      const back=[-h.dx,-h.dy];
-      const good=opts.filter(d=>!(d[0]===back[0]&&d[1]===back[1]));
-      const list=good.length?good:opts;
-      // objetivo: 'chase' va directo a ella; 'ambush' 4 celdas por delante
-      let tc=p.c, tr=p.r;
-      if(h.kind==='ambush'){ tc=p.c+p.dx*4; tr=p.r+p.dy*4; }
-      let bd=null,bs=1e9;
-      for(const d of list){
-        const nc=h.c+d[0], nr=h.r+d[1];
-        let dist=Math.hypot(nc-tc,nr-tr);
-        if(h.scared>0) dist=-dist+Math.random()*2;   // huye
-        if(dist<bs){bs=dist;bd=d;}
+  const arrived=step(p,C3.pspd);
+  if(arrived){
+    if((p.wx||p.wy)&&!blocked(p.c+p.wx,p.r+p.wy,'p')){ p.dx=p.wx; p.dy=p.wy; }
+    if(blocked(p.c+p.dx,p.r+p.dy,'p')){ p.dx=0; p.dy=0; }
+    if(p.dx)p.face=p.dx<0;
+    place(p);
+    /* comer */
+    for(const d of C3.dots){ if(!d.eaten&&d.r===p.r&&d.c===p.c){
+      d.eaten=true; C3.eaten++;
+      if(d.big){
+        C3.combo=0;
+        for(const h of C3.h){ if(!h.eyes){ h.frightened=C3.fright; if(!h.inHouse&&h.release<=0)reverse(h); } }
+        addScore(50,p.x,p.y-14,"¡RUNA!",'#f4b942'); A.sfx('win');
+      } else { addScore(10,p.x,p.y-12,null); if(C3.eaten%3===0)A.sfx('coin'); }
+      if(C3.eaten===70||C3.eaten===140){ C3.fruit={c:10,r:13}; C3.fruitT=600; }
+      if(C3.eaten>=C3.total) return winGame();
+    }}
+  }
+  p.mouth+=0.32;
+
+  /* --- fruta bonus --- */
+  if(C3.fruit){ C3.fruitT--;
+    if(C3.fruitT<=0)C3.fruit=null;
+    else if(C3.fruit.c===p.c&&C3.fruit.r===p.r){
+      addScore(200,p.x,p.y-16,"+200 ❤",'#e879c8'); A.sfx('win'); C3.fruit=null; }
+  }
+
+  /* --- cazadores --- */
+  for(const h of C3.h){
+    if(h.release>0){ h.release--; h.bob+=0.11;
+      h.y=centerY(h.r)+Math.sin(h.bob)*C3.cell*0.22; continue; }
+    if(h.frightened>0)h.frightened--;
+
+    /* salir de la casa: sube hasta la puerta y ya circula por el laberinto */
+    if(h.inHouse){
+      const dx=centerX(C3.door.c)-h.x, dy=centerY(C3.door.r)-h.y;
+      h.x+=dx*0.12; h.y+=dy*0.12;
+      if(Math.abs(dx)<1.5&&Math.abs(dy)<1.5){
+        h.inHouse=false; h.c=C3.door.c; h.r=C3.door.r; h.prog=0; h.dx=0; h.dy=-1; place(h);
       }
-      if(bd){ h.dx=bd[0]; h.dy=bd[1]; }
-      // ¿la tiene en la mira? -> embestida
-      if(h.scared<=0&&(h.c===p.c||h.r===p.r)&&Math.hypot(h.c-p.c,h.r-p.r)<5.5){
-        h.lunge=26; if(tick%18===0)A.sfx('blip');
-      }
+      continue;
     }
-    const spd=h.scared>0?C3.hspeed*0.55:C3.hspeed*(h.lunge>0?1.45:1);
-    h.x+=h.dx*spd; h.y+=h.dy*spd;
-    if(h.dx&&Math.abs(h.x-(C3.ox+h.c*C3.cell+C3.cell/2))>=C3.cell*0.5)h.c+=h.dx;
-    if(h.dy&&Math.abs(h.y-(C3.oy+h.r*C3.cell+C3.cell/2))>=C3.cell*0.5)h.r+=h.dy;
-    // contacto
-    if(Math.hypot(h.x-p.x,h.y-p.y)<C3.cell*0.78){
-      if(h.scared>0){ addScore(150,h.x,h.y-16,"+150",'#f4b942'); addParts(h.x,h.y,'#38bdf8',16,1.8);
-        A.sfx('boom'); h.c=h.home[0]; h.r=h.home[1]; snap(h); h.scared=0; h.dx=0; h.dy=0; h.lunge=0; shake=6; }
-      else if(C3.inv<=0){ C3.caught=1; addPop(p.x,p.y-22,"¡TE ATRAPÓ!",'#ff6b8a'); return hit(); }
+    /* los ojos vuelven a la casa */
+    if(h.eyes&&h.c===C3.door.c&&h.r===C3.door.r&&h.prog===0){
+      h.eyes=false; h.frightened=0; h.inHouse=true;
+      h.c=C3.house.c; h.r=C3.house.r; h.prog=0; place(h); h.release=40; continue;
+    }
+
+    let spd=C3.hspd;
+    if(h.eyes)spd=C3.hspd*2.2;
+    else if(h.frightened>0)spd=C3.hspd*0.55;
+    else if(tileAt(h.c,h.r)===' ')spd=C3.hspd*0.6;      // mas lentos en el tunel
+
+    if(step(h,spd)) chooseDir(h);
+
+    /* contacto */
+    if(!h.eyes&&Math.hypot(h.x-p.x,h.y-p.y)<C3.cell*0.72){
+      if(h.frightened>0){
+        C3.combo++; const pts=[200,400,800,1600][Math.min(3,C3.combo-1)];
+        addScore(pts,h.x,h.y-16,"+"+pts,'#4cd8f7'); addParts(h.x,h.y,'#4cd8f7',16,1.8);
+        A.sfx('boom'); h.eyes=true; h.frightened=0; freeze=8; shake=5;
+      } else if(C3.inv<=0){
+        addPop(p.x,p.y-22,"¡TE ATRAPÓ!",'#ff6b8a'); return hit();
+      }
     }
   }
 }
+
 function mazeDraw(){
-  bgGrid('#0d1830','#05080f');
+  bgGrid('#0a1428','#04070f');
+  const cs=C3.cell;
+  /* muros con doble linea, como el original */
   for(let r=0;r<C3.rows;r++)for(let c=0;c<C3.cols;c++){
-    if(C3.grid[r][c]!=='#')continue;
-    const x=C3.ox+c*C3.cell, y=C3.oy+r*C3.cell;
-    const wg=ctx.createLinearGradient(x,y,x,y+C3.cell);
-    wg.addColorStop(0,'#24354f'); wg.addColorStop(1,'#141f33');
-    ctx.fillStyle=wg; rr(x+1.5,y+1.5,C3.cell-3,C3.cell-3,4); ctx.fill();
-    ctx.save(); ctx.shadowColor='rgba(56,189,248,.55)'; ctx.shadowBlur=6;
-    ctx.strokeStyle='rgba(96,190,240,.55)'; ctx.lineWidth=1.2;
-    rr(x+1.5,y+1.5,C3.cell-3,C3.cell-3,4); ctx.stroke(); ctx.restore();
+    const t=C3.grid[r][c];
+    const x=C3.ox+c*cs, y=C3.oy+r*cs;
+    if(t==='#'){
+      ctx.save();
+      ctx.strokeStyle='#2f6fd0'; ctx.lineWidth=2; ctx.shadowColor='rgba(80,160,255,.7)'; ctx.shadowBlur=6;
+      /* dibuja borde solo donde toca aire: hace pasillos, no bloques */
+      const up=tileAt(c,r-1)==='#', dn=tileAt(c,r+1)==='#',
+            lf=tileAt(c-1,r)==='#', rt=tileAt(c+1,r)==='#';
+      ctx.beginPath();
+      if(!up){ctx.moveTo(x+1,y+1);ctx.lineTo(x+cs-1,y+1);}
+      if(!dn){ctx.moveTo(x+1,y+cs-1);ctx.lineTo(x+cs-1,y+cs-1);}
+      if(!lf){ctx.moveTo(x+1,y+1);ctx.lineTo(x+1,y+cs-1);}
+      if(!rt){ctx.moveTo(x+cs-1,y+1);ctx.lineTo(x+cs-1,y+cs-1);}
+      ctx.stroke(); ctx.restore();
+    } else if(t==='-'){
+      ctx.strokeStyle='#ff9ad4'; ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(x+2,y+cs/2);ctx.lineTo(x+cs-2,y+cs/2);ctx.stroke();
+    }
   }
+  /* puntos */
   for(const d of C3.dots){ if(d.eaten)continue;
-    const x=C3.ox+d.c*C3.cell+C3.cell/2, y=C3.oy+d.r*C3.cell+C3.cell/2;
-    if(d.big){ const s=1+Math.sin(tick*0.15)*0.22;
-      ctx.fillStyle='#f4b942'; ctx.save();ctx.translate(x,y);ctx.scale(s,s);
-      ctx.beginPath();ctx.arc(0,0,5,0,7);ctx.fill();
-      ctx.globalAlpha=.35;ctx.beginPath();ctx.arc(0,0,9,0,7);ctx.fill();ctx.restore(); }
-    else { ctx.fillStyle='#9fe0ff'; ctx.beginPath();ctx.arc(x,y,2.2,0,7);ctx.fill(); }
+    const x=C3.ox+d.c*cs+cs/2, y=C3.oy+d.r*cs+cs/2;
+    if(d.big){ const s=1+Math.sin(tick*0.16)*0.25;
+      ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+      ctx.shadowColor='rgba(244,185,66,.9)';ctx.shadowBlur=12;
+      ctx.fillStyle='#f4b942';ctx.beginPath();ctx.arc(0,0,cs*0.26,0,7);ctx.fill();ctx.restore(); }
+    else { ctx.fillStyle='#ffe3ad'; ctx.beginPath();ctx.arc(x,y,cs*0.10,0,7);ctx.fill(); }
   }
-  // cazadores
-  for(const h of C3.hunters){
-    const sc=h.scared>0;
-    if(sc){ ctx.save(); ctx.globalAlpha=.5+0.3*Math.sin(tick*0.4); ctx.fillStyle='#38bdf8';
-      ctx.beginPath();ctx.arc(h.x,h.y-C3.cell*0.3,C3.cell*0.66,0,7);ctx.fill(); ctx.restore(); }
-    else if(h.lunge>0){ // aura de embestida
-      ctx.save(); ctx.globalAlpha=.35+0.25*Math.sin(tick*0.6); ctx.fillStyle='#ff5a7a';
-      ctx.beginPath();ctx.arc(h.x,h.y-C3.cell*0.3,C3.cell*0.72,0,7);ctx.fill(); ctx.restore(); }
-    const wob=sc?0:Math.sin(tick*0.25+h.c)*0.05;
-    if(!kissing)drawAvatar('him',h.x,h.y+C3.cell*0.5,C3.cell*1.5*(1+wob),h.dx>0,1,1,sc?0.55:1);
-    // ojos de caza
-    if(!sc&&h.lunge>0){ ctx.fillStyle='#ff3b5c'; ctx.globalAlpha=.9;
-      ctx.beginPath();ctx.arc(h.x-4,h.y-C3.cell*0.75,2,0,7);ctx.arc(h.x+4,h.y-C3.cell*0.75,2,0,7);ctx.fill(); ctx.globalAlpha=1; }
+  /* fruta */
+  if(C3.fruit){ const x=C3.ox+C3.fruit.c*cs+cs/2, y=C3.oy+C3.fruit.r*cs+cs/2;
+    const s=1+Math.sin(tick*0.2)*0.12;
+    ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle='#e879c8';
+    ctx.shadowColor='rgba(232,121,200,.9)';ctx.shadowBlur=14;
+    ctx.beginPath();ctx.moveTo(0,cs*0.16);ctx.bezierCurveTo(-cs*.36,-cs*.2,-cs*.6,cs*.1,0,cs*.5);
+    ctx.bezierCurveTo(cs*.6,cs*.1,cs*.36,-cs*.2,0,cs*0.16);ctx.fill();ctx.restore(); }
+
+  /* cazadores: el avatar de el, teñido de su color */
+  for(const h of C3.h){
+    const fr=h.frightened>0, blink=fr&&h.frightened<90&&Math.floor(h.frightened/8)%2===0;
+    if(h.eyes){
+      ctx.save(); ctx.fillStyle='#eaf6ff';
+      ctx.beginPath();ctx.arc(h.x-cs*0.16,h.y-cs*0.1,cs*0.16,0,7);
+      ctx.arc(h.x+cs*0.16,h.y-cs*0.1,cs*0.16,0,7);ctx.fill();
+      ctx.fillStyle='#2f6fd0';
+      ctx.beginPath();ctx.arc(h.x-cs*0.16+h.dx*3,h.y-cs*0.1+h.dy*3,cs*0.07,0,7);
+      ctx.arc(h.x+cs*0.16+h.dx*3,h.y-cs*0.1+h.dy*3,cs*0.07,0,7);ctx.fill();
+      ctx.restore(); continue;
+    }
+    ctx.save();
+    const glow = fr ? (blink?'rgba(255,255,255,.95)':'rgba(70,130,255,.95)') : h.col;
+    // halo
+    ctx.shadowColor=glow; ctx.shadowBlur=18;
+    ctx.beginPath();ctx.arc(h.x,h.y-cs*0.2,cs*0.52,0,7);
+    ctx.fillStyle=fr?(blink?'rgba(255,255,255,.3)':'rgba(70,130,255,.32)'):'rgba(0,0,0,0)';
+    ctx.fill();
+    // anillo de identidad a los pies
+    ctx.shadowBlur=10; ctx.strokeStyle=glow; ctx.lineWidth=2.4;
+    ctx.beginPath();ctx.ellipse(h.x,h.y+cs*0.5,cs*0.42,cs*0.16,0,0,7);ctx.stroke();
+    ctx.restore();
+    if(!kissing){
+      ctx.save();
+      if(CANFILTER) ctx.filter = fr
+        ? (blink?'grayscale(1) brightness(1.6)':'grayscale(1) brightness(.55) sepia(1) hue-rotate(190deg) saturate(4)')
+        : 'hue-rotate('+h.hue+'deg) saturate(1.5)';
+      drawAvatar('him',h.x,h.y+cs*0.55,cs*1.55,h.dx>0,1,1,fr?0.85:1);
+      ctx.restore();
+    }
   }
-  const p=C3.p, blink=(C3.inv>0&&Math.floor(C3.inv/4)%2===0);
-  if(!kissing)drawAvatar('her',p.x,p.y+C3.cell*0.5,C3.cell*1.45,p.face,1,1,blink?0.45:1);
-  // aviso de peligro cercano
-  let near=false; for(const h of C3.hunters) if(Math.hypot(h.x-p.x,h.y-p.y)<C3.cell*2.6&&h.scared<=0)near=true;
-  if(near){ ctx.save(); ctx.globalAlpha=.25+0.2*Math.sin(tick*0.5);
-    ctx.strokeStyle='#ff5a7a'; ctx.lineWidth=3; rr(2,2,W-4,H-4,16); ctx.stroke(); ctx.restore(); }
-  ctx.textAlign='center'; ctx.font="700 12px 'Chakra Petch',sans-serif"; ctx.fillStyle='#9fb2cd';
-  ctx.fillText('RUNAS '+(C3.dots.length-C3.left)+' / '+C3.dots.length, W/2, C3.oy-6); ctx.textAlign='left';
+  /* jugadora */
+  const p=C3.p, blinkP=(C3.inv>0&&Math.floor(C3.inv/4)%2===0);
+  if(!kissing)drawAvatar('her',p.x,p.y+cs*0.55,cs*1.5,p.face,1,1,blinkP?0.45:1);
+
+  /* marcador y avisos */
+  ctx.textAlign='center';
+  ctx.font="700 12px 'Chakra Petch',sans-serif"; ctx.fillStyle='#9fb2cd';
+  ctx.fillText('RUNAS '+C3.eaten+' / '+C3.total, W/2, C3.oy-6);
+  if(C3.ready>0){
+    ctx.font="700 22px 'Chakra Petch',sans-serif";
+    ctx.fillStyle='#f4b942'; ctx.fillText(C3.ready>40?'¡PREPARADA!':'¡YA!', W/2, C3.oy+C3.cell*13.5);
+  }
+  if(C3.mode==='scatter'&&C3.ready<=0){
+    ctx.font="700 10px 'Chakra Petch',sans-serif"; ctx.fillStyle='rgba(160,195,240,.6)';
+    ctx.fillText('SE DISPERSAN', W/2, C3.oy+C3.rows*C3.cell+14);
+  } else if(C3.ready<=0){
+    const anyFr=C3.h.some(h=>h.frightened>0);
+    ctx.font="700 10px 'Chakra Petch',sans-serif";
+    ctx.fillStyle=anyFr?'rgba(76,216,247,.9)':'rgba(255,107,138,.85)';
+    ctx.fillText(anyFr?'¡HUYEN! CÓMELOS':'TE PERSIGUEN', W/2, C3.oy+C3.rows*C3.cell+14);
+  }
+  ctx.textAlign='left';
 }
 
 /* ==========================================================
@@ -1391,7 +1573,7 @@ const GAMES=[
   {id:'inv', name:'INVASORES', icon:'👾', desc:'Derriba drones y al jefe',
    vpad:false, down:false, action:true, actionLabel:'FUEGO', actIsUp:true,
    init:invInit, update:invUpdate, draw:invDraw},
-  {id:'maze', name:'LABERINTO', icon:'🌀', desc:'Come runas mientras él te caza',
+  {id:'maze', name:'LABERINTO', icon:'🌀', desc:'Pac-Man: 4 cazadores te persiguen',
    vpad:true, down:true, action:false, actionLabel:'—', actIsUp:false,
    init:mazeInit, update:mazeUpdate, draw:mazeDraw},
   {id:'cross', name:'CRUCE', icon:'🚦', desc:'Cruza los carriles hasta él',
