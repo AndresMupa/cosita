@@ -120,6 +120,33 @@
   .gcard.locked:hover{background:var(--glass); border-color:var(--line);}
   .dbtn{display:flex; align-items:center; justify-content:center; gap:6px;}
   #diffList{display:flex; flex-direction:column; gap:8px; width:100%;}
+  /* --- insignias y pantallas de logro --- */
+  .badge{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:26px;font-weight:800;}
+  .badge.ok{background:radial-gradient(circle at 35% 30%,rgba(74,222,128,.35),rgba(74,222,128,.12));
+    border:1px solid rgba(74,222,128,.55); color:#4ade80; box-shadow:0 0 30px rgba(74,222,128,.25);}
+  .badge.gold{background:radial-gradient(circle at 35% 30%,rgba(255,214,120,.45),rgba(244,185,66,.15));
+    border:1px solid rgba(255,214,120,.7); color:#ffd678; box-shadow:0 0 42px rgba(244,185,66,.4);
+    animation:pulseg 1.8s ease-in-out infinite;}
+  @keyframes pulseg{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+  .title.gold{background:linear-gradient(100deg,#ffd678,#fff3d0 45%,#f4b942);
+    -webkit-background-clip:text;background-clip:text;color:transparent;}
+  .lvldots{display:flex;gap:6px;width:100%;}
+  .lvlpip{flex:1;padding:8px 4px;border-radius:11px;border:1px solid var(--line);
+    background:var(--glass);text-align:center;font-family:'Chakra Petch',sans-serif;
+    font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--txt-dim);}
+  .lvlpip.on{border-color:rgba(74,222,128,.55);background:rgba(74,222,128,.14);color:#bff5d2;}
+  .lvlpip.on span::after{content:' \2713';}
+  .prize-card{border-color:rgba(255,214,120,.4);
+    box-shadow:0 24px 70px rgba(0,0,0,.6), 0 0 60px rgba(244,185,66,.12), inset 0 1px 0 rgba(255,235,190,.2);}
+  .prize{background:linear-gradient(135deg,rgba(255,214,120,.22),rgba(232,121,200,.16));
+    border:1px solid rgba(255,214,120,.5); color:#fff6e2; font-weight:600;
+    padding:16px; border-radius:16px; font-size:clamp(14.5px,3.9vw,17px); line-height:1.45;
+    box-shadow:0 12px 34px rgba(244,185,66,.18), inset 0 1px 0 rgba(255,255,255,.15);
+    animation:pop .5s cubic-bezier(.2,1.4,.4,1);}
+  .consent{font-size:11px;opacity:.75;font-style:italic;}
+  .btn.gold{background:linear-gradient(180deg,#ffdc8a,#e9a92f); color:#3a2400;
+    box-shadow:0 8px 22px rgba(244,185,66,.35), inset 0 1px 0 rgba(255,255,255,.5);}
   /* controles */
   #touch{display:none; width:min(96vw,480px); padding:2px 4px calc(4px + env(safe-area-inset-bottom));
     justify-content:space-between; align-items:center; flex:0 0 auto; gap:8px;}
@@ -164,7 +191,7 @@
     <span class="chip"><b id="dname" style="font-size:.9em">FÁCIL</b></span>
     <span class="chip"><span class="k">PTS</span><b id="score">0</b></span>
     <span class="chip"><b id="lives">❤️❤️❤️</b></span>
-    <span class="chip hers">💖<b id="cElla">0</b></span>
+    <span class="chip hers">🎁<b id="cElla">0</b></span>
     <span class="chip his">💙<b id="cEl">0</b></span>
   </div>
   <div id="stage">
@@ -179,9 +206,9 @@
           <div class="face her"><div class="ring" id="ringHero"></div><label>Cambiar<input type="file" id="fileHero" accept="image/*"></label></div>
           <div class="face him"><div class="ring" id="ringBoss"></div><label>Cambiar<input type="file" id="fileBoss" accept="image/*"></label></div>
         </div>
-        <p class="hint">6 juegos clásicos, 3 dificultades cada uno. Gana uno → carta a favor de <b style="color:var(--magenta)">ella</b>. Pierde una vida → carta a favor de <b style="color:var(--cyan)">él</b>.</p>
+        <p class="hint">6 juegos clásicos · 3 niveles cada uno.<br>Completa los <b>3 niveles</b> de un juego y ella gana un <b style="color:var(--amber)">PREMIO</b> 🎁. Si pierde, él gana una <b style="color:var(--cyan)">penitencia</b>.</p>
         <div class="games" id="gameList"></div>
-        <p class="hint" id="totLine">Historial · 💖 0 &nbsp; 💙 0</p>
+        <p class="hint" id="totLine">Premios de ella: <b>0</b> &nbsp;·&nbsp; Penitencias: <b>0</b></p>
         <button class="btn" id="startBtn">Torneo completo</button>
         <button class="btn alt small" id="editBtn">Editar cartas</button>
       </div>
@@ -194,7 +221,7 @@
         <h2 class="title" id="diffTitle">JUEGO</h2>
         <p class="hint" id="diffDesc">—</p>
         <div id="diffList"></div>
-        <p class="hint">Supera las 3 dificultades para desbloquear el siguiente juego.</p>
+        <p class="hint">Gana los <b>3 niveles</b> para el PREMIO 🎁 y desbloquear el siguiente juego.</p>
         <button class="btn alt small" id="diffBack">Volver</button>
       </div>
     </div>
@@ -209,15 +236,31 @@
       </div>
     </div>
 
-    <!-- Carta para ella (ganó el juego) -->
-    <div id="winScreen" class="overlay hidden">
+    <!-- Nivel superado (sin premio todavia) -->
+    <div id="levelScreen" class="overlay hidden">
       <div class="card">
-        <h2 class="title">Beso robado</h2>
-        <p class="hint" id="winSub">Superó el juego. Carta a favor de <b style="color:var(--magenta)">ella</b>:</p>
-        <div class="peni" id="winText">—</div>
-        <p class="hint" id="winTally">💖 0 · 💙 0</p>
-        <p class="hint" id="nextSub" style="color:var(--amber)"></p>
-        <button class="btn" id="nextBtn">Siguiente juego</button>
+        <div class="badge ok">&#10003;</div>
+        <h2 class="title" id="lvlTitle">Nivel superado</h2>
+        <p class="hint" id="lvlSub">-</p>
+        <div id="lvlDots" class="lvldots"></div>
+        <p class="hint" id="lvlMsg">-</p>
+        <button class="btn" id="lvlBtn">Siguiente nivel</button>
+        <button class="btn alt small" id="lvlMenu">Menu</button>
+      </div>
+    </div>
+
+    <!-- PREMIO (3 niveles completados) -->
+    <div id="prizeScreen" class="overlay hidden">
+      <div class="card prize-card">
+        <div class="badge gold">&#9733;</div>
+        <h2 class="title gold">Premio desbloqueado</h2>
+        <p class="hint">Supero los 3 niveles de <b id="prizeGame">-</b></p>
+        <div class="prize" id="prizeText">-</div>
+        <p class="hint consent">Solo dentro de los limites que ambos acuerden, con palabra de seguridad.</p>
+        <p class="hint" id="prizeTally">Premios ganados: 0</p>
+        <p class="hint" id="prizeNext" style="color:var(--amber)"></p>
+        <button class="btn gold" id="prizeBtn">Continuar</button>
+        <button class="btn alt small" id="prizeMenu">Menu</button>
       </div>
     </div>
 
@@ -246,9 +289,9 @@
     <div id="editScreen" class="overlay hidden">
       <div class="card">
         <h2 class="title">Cartas</h2>
-        <p class="hint" style="color:var(--magenta);align-self:flex-start">💖 A favor de ella — él se las cumple</p>
+        <p class="hint" style="color:var(--magenta);align-self:flex-start">🎁 PREMIOS de ella (al completar los 3 niveles)</p>
         <textarea id="ellaArea"></textarea>
-        <p class="hint" style="color:var(--cyan);align-self:flex-start">💙 A favor de él — ella se las cumple</p>
+        <p class="hint" style="color:var(--cyan);align-self:flex-start">💙 PENITENCIAS para ella (cuando pierde)</p>
         <textarea id="peniArea"></textarea>
         <div class="row">
           <button class="btn small" id="saveBtn">Guardar</button>
@@ -291,11 +334,31 @@ const DEFAULT_EL=[
   "Planear juntos la próxima escapada"
 ];
 const DEFAULT_ELLA=[
-  "Él cocina tu cena favorita","Masaje de pies de 10 minutos","Eliges el plan de todo el finde",
-  "Desayuno en la cama","Él lava los platos toda la semana","Una cita sorpresa organizada por él",
-  "Maratón de tu serie favorita, sin quejas","Ramo de flores","Él te consiente con tu antojo",
-  "La foto de pareja que tú quieras","Te deja ganar y te aplaude","Una carta de amor escrita por él",
-  "Sesión de mimos de 30 minutos","Él paga el próximo postre","Un baile lento dedicado a ti"
+  "Ella elige quién toma el control durante los próximos 10 minutos",
+  "Sesión de bondage suave con muñecas sujetas y palabra de seguridad acordada",
+  "Masaje sensual mientras lleva los ojos vendados",
+  "Ella elige el outfit para una cita privada",
+  "Una ronda de besos mientras permanece con los ojos vendados",
+  "Ella puede pedir una orden juguetona y consensuada que él deberá cumplir",
+  "Cinco minutos de juego de dominación suave con límites acordados previamente",
+  "Ella elige entre venda, esposas acolchadas o cuerda suave para el siguiente reto",
+  "Una sesión de caricias lentas sin poder quitarse la venda",
+  "Ella recibe un vale de Hoy mando yo para usar cuando quiera",
+  "Él debe cumplir tres instrucciones sensuales elegidas por ella",
+  "Ella elige la música, la iluminación y el ambiente para una noche privada",
+  "Un masaje completo de 15 minutos con ella totalmente relajada",
+  "Juego de obediencia: él debe seguir sus instrucciones durante cinco minutos",
+  "Ella puede detener el juego en cualquier momento y cambiar el reto",
+  "Una ronda de besos en la que ella decide cuándo puede empezar y cuándo debe parar",
+  "Ella recibe un comodín para cambiar cualquier penitencia por una de bondage suave",
+  "Cinco minutos de tensión y provocación sin llegar todavía al delicioso",
+  "Ella diseña una fantasía de dominación para jugar juntos otro día",
+  "Una sesión de roles: ella decide quién domina y quién obedece",
+  "Ella puede elegir una palabra prohibida; si él la dice, cumple una penitencia",
+  "Vale por una noche temática de bondage suave preparada especialmente para ella",
+  "Ella elige tres reglas sensuales que deberán respetarse durante una ronda",
+  "Una ronda con ojos vendados donde ella debe adivinar qué tipo de caricia recibe",
+  "Premio mayor: ella diseña la experiencia completa de la noche dentro de los límites acordados"
 ];
 const K={pen:"ad_pen",ella:"ad_ella",hero:"ad_hero",boss:"ad_boss",mute:"ad_mute",tot:"ad_tot",best:"ad_best",prog:"ad_prog"};
 const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v;}catch(e){return d;}},
@@ -359,8 +422,10 @@ document.getElementById('sound').onclick=()=>{A.init();A.resume();A.toggle();
 
 /* ---------- Sprites (avatares) ---------- */
 const SPR={her:null,him:null,herW:1,himW:1};
-function loadSprite(src,slot){ const im=new Image();
-  im.onload=()=>{ SPR[slot]=im; SPR[slot+'W']=im.width/im.height; refreshRings(); }; im.src=src; }
+function loadSprite(src,slot){ if(!src)return; const im=new Image();
+  im.onload=()=>{ SPR[slot]=im; SPR[slot+'W']=im.width/im.height; refreshRings(); };
+  im.onerror=()=>{ /* conserva el avatar anterior */ refreshRings(); };
+  im.src=src; }
 function refreshRings(){
   const rh=document.getElementById('ringHero'), rb=document.getElementById('ringBoss');
   if(!SPR.her&&rh&&!rh.textContent)rh.textContent='👩';
@@ -370,13 +435,39 @@ function refreshRings(){
   if(SPR.him&&rb)rb.style.backgroundImage='url('+SPR.him.src+')'; }
 if(ls.get(K.hero,null)||SPR_HER)loadSprite(ls.get(K.hero,null)||SPR_HER,'her'); else refreshRings();
 if(ls.get(K.boss,null)||SPR_HIM)loadSprite(ls.get(K.boss,null)||SPR_HIM,'him'); else refreshRings();
-function handleFile(input,key,slot){ const f=input.files&&input.files[0]; if(!f)return;
-  const fr=new FileReader(); fr.onload=()=>{ const im=new Image(); im.onload=()=>{
-    const H=128, w=Math.max(1,Math.round(im.width*H/im.height));
-    const c=document.createElement('canvas'); c.width=w; c.height=H;
-    c.getContext('2d').drawImage(im,0,0,w,H);
-    const data=c.toDataURL('image/png'); ls.set(key,data); loadSprite(data,slot);
-  }; im.src=fr.result; }; fr.readAsDataURL(f); }
+function saveSprite(key,data){
+  // intenta guardar; si no cabe, reduce y reintenta para NO perder la imagen
+  try{ localStorage.setItem(key,data); return true; }catch(e){}
+  return false;
+}
+function spriteFromImage(im,H){
+  const w=Math.max(1,Math.round(im.width*H/im.height));
+  const c=document.createElement('canvas'); c.width=w; c.height=H;
+  c.getContext('2d').drawImage(im,0,0,w,H);
+  return c.toDataURL('image/png');
+}
+function handleFile(input,key,slot){
+  const f=input.files&&input.files[0]; if(!f)return;
+  const fr=new FileReader();
+  fr.onload=()=>{
+    const im=new Image();
+    im.onload=()=>{
+      let data=null;
+      for(const H of [128,104,84,64,48]){
+        data=spriteFromImage(im,H);
+        if(saveSprite(key,data)){ break; }
+        data=null;
+      }
+      if(!data){ data=spriteFromImage(im,128); alert('No se pudo guardar la imagen en este dispositivo, pero se usará en esta partida.'); }
+      loadSprite(data,slot);
+    };
+    im.onerror=()=>alert('No se pudo leer esa imagen. Prueba con otra.');
+    im.src=fr.result;
+  };
+  fr.onerror=()=>alert('No se pudo leer el archivo.');
+  fr.readAsDataURL(f);
+  input.value='';
+}
 document.getElementById('fileHero').addEventListener('change',e=>handleFile(e.target,K.hero,'her'));
 document.getElementById('fileBoss').addEventListener('change',e=>handleFile(e.target,K.boss,'him'));
 
@@ -430,7 +521,7 @@ function avatarW(slot,h){ return SPR[slot]?h*SPR[slot+'W']:h*0.55; }
 let state="menu";           // menu | play | peni | win | over | pause | edit | kiss
 let mode=0;                 // índice del juego actual
 let lives=3, score=0, scoreShown=0, tick=0;
-let shake=0, freeze=0, flashT=0, kissT=0, kissing=false;
+let shake=0, freeze=0, flashT=0, kissT=0, kissing=false, prizeConfetti=0;
 let parts=[], pops=[];
 let best=parseInt(ls.get(K.best,"0"),10)||0;
 let tourney=false;          // torneo = encadena los 4 juegos
@@ -559,17 +650,26 @@ function climbUpdate(){
 function climbDraw(){
   bgGrid('#16233d','#070b16');
   for(const pl of C1.plats){
-    ctx.strokeStyle='#33455f'; ctx.lineWidth=13; ctx.lineCap='round';
+    ctx.save();
+    ctx.strokeStyle='#2b3a52'; ctx.lineWidth=14; ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(pl.x0,platY(pl,pl.x0)+1);ctx.lineTo(pl.x1,platY(pl,pl.x1)+1);ctx.stroke();
+    const g=ctx.createLinearGradient(0,platY(pl,pl.x0)-7,0,platY(pl,pl.x0)+7);
+    g.addColorStop(0,'#44597a'); g.addColorStop(1,'#26344a');
+    ctx.strokeStyle=g; ctx.lineWidth=12;
     ctx.beginPath();ctx.moveTo(pl.x0,platY(pl,pl.x0));ctx.lineTo(pl.x1,platY(pl,pl.x1));ctx.stroke();
-    ctx.strokeStyle='#7dd8ff'; ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(pl.x0,platY(pl,pl.x0)-4.5);ctx.lineTo(pl.x1,platY(pl,pl.x1)-4.5);ctx.stroke();
+    ctx.shadowColor='rgba(125,216,255,.85)'; ctx.shadowBlur=10;
+    ctx.strokeStyle='#7dd8ff'; ctx.lineWidth=2.2;
+    ctx.beginPath();ctx.moveTo(pl.x0,platY(pl,pl.x0)-4.8);ctx.lineTo(pl.x1,platY(pl,pl.x1)-4.8);ctx.stroke();
+    ctx.restore();
   }
+  ctx.save(); ctx.shadowColor='rgba(244,185,66,.6)'; ctx.shadowBlur=8;
   ctx.strokeStyle='#f4b942'; ctx.lineWidth=3;
   for(const l of C1.ladders){
     ctx.beginPath();ctx.moveTo(l.x-8,l.top);ctx.lineTo(l.x-8,l.bottom);ctx.moveTo(l.x+8,l.top);ctx.lineTo(l.x+8,l.bottom);ctx.stroke();
     ctx.lineWidth=2; for(let y=l.top+7;y<l.bottom;y+=12){ctx.beginPath();ctx.moveTo(l.x-8,y);ctx.lineTo(l.x+8,y);ctx.stroke();}
     ctx.lineWidth=3;
   }
+  ctx.restore();
   for(const c of C1.coins){ if(c.dead)continue; drawCoin(c.x,c.y+Math.sin(c.t*0.08)*2,c.t); }
   for(const o of C1.orbs) drawOrb(o.x,o.y,o.r,o.spin);
   // avatares
@@ -789,9 +889,12 @@ function mazeDraw(){
   for(let r=0;r<C3.rows;r++)for(let c=0;c<C3.cols;c++){
     if(C3.grid[r][c]!=='#')continue;
     const x=C3.ox+c*C3.cell, y=C3.oy+r*C3.cell;
-    ctx.fillStyle='#1b2a45'; rr(x+1.5,y+1.5,C3.cell-3,C3.cell-3,4); ctx.fill();
-    ctx.strokeStyle='rgba(56,189,248,.45)'; ctx.lineWidth=1.2;
-    rr(x+1.5,y+1.5,C3.cell-3,C3.cell-3,4); ctx.stroke();
+    const wg=ctx.createLinearGradient(x,y,x,y+C3.cell);
+    wg.addColorStop(0,'#24354f'); wg.addColorStop(1,'#141f33');
+    ctx.fillStyle=wg; rr(x+1.5,y+1.5,C3.cell-3,C3.cell-3,4); ctx.fill();
+    ctx.save(); ctx.shadowColor='rgba(56,189,248,.55)'; ctx.shadowBlur=6;
+    ctx.strokeStyle='rgba(96,190,240,.55)'; ctx.lineWidth=1.2;
+    rr(x+1.5,y+1.5,C3.cell-3,C3.cell-3,4); ctx.stroke(); ctx.restore();
   }
   for(const d of C3.dots){ if(d.eaten)continue;
     const x=C3.ox+d.c*C3.cell+C3.cell/2, y=C3.oy+d.r*C3.cell+C3.cell/2;
@@ -964,14 +1067,24 @@ function brickDraw(){
     ctx.strokeStyle=dbl?'#e879c8':'rgba(56,189,248,.5)'; ctx.lineWidth=1.4;
     rr(k.x+2,k.y,C5.bw-4,C5.bh,5); ctx.stroke();
     ctx.fillStyle='rgba(255,255,255,.10)'; rr(k.x+4,k.y+2,C5.bw-8,5,3); ctx.fill(); }
-  // bola
+  // bola con estela
   const b=C5.ball;
-  ctx.save(); ctx.globalAlpha=.35; ctx.fillStyle='#f4b942';
-  ctx.beginPath();ctx.arc(b.x,b.y,13,0,7);ctx.fill(); ctx.restore();
-  ctx.fillStyle='#ffe0a3'; ctx.beginPath();ctx.arc(b.x,b.y,7,0,7);ctx.fill();
+  C5.trail=C5.trail||[];
+  if(!b.stuck){ C5.trail.push({x:b.x,y:b.y}); if(C5.trail.length>9)C5.trail.shift(); }
+  for(let i=0;i<C5.trail.length;i++){ const t=C5.trail[i], a=(i+1)/C5.trail.length;
+    ctx.globalAlpha=a*0.32; ctx.fillStyle='#f4b942';
+    ctx.beginPath();ctx.arc(t.x,t.y,7*a,0,7);ctx.fill(); }
+  ctx.globalAlpha=1;
+  ctx.save(); ctx.shadowColor='rgba(244,185,66,.95)'; ctx.shadowBlur=18;
+  const bg=ctx.createRadialGradient(b.x-2,b.y-2,1,b.x,b.y,7.5);
+  bg.addColorStop(0,'#fff8e4'); bg.addColorStop(1,'#f0b234');
+  ctx.fillStyle=bg; ctx.beginPath();ctx.arc(b.x,b.y,7.5,0,7);ctx.fill(); ctx.restore();
   // paleta = ella
-  ctx.fillStyle='rgba(56,189,248,.85)'; rr(C5.px-C5.pw/2,H-96,C5.pw,9,4.5); ctx.fill();
-  ctx.fillStyle='rgba(190,225,255,.6)'; rr(C5.px-C5.pw/2+3,H-95,C5.pw-6,3,1.5); ctx.fill();
+  ctx.save(); ctx.shadowColor='rgba(56,189,248,.9)'; ctx.shadowBlur=14;
+  const pg=ctx.createLinearGradient(0,H-96,0,H-87);
+  pg.addColorStop(0,'#8fd9ff'); pg.addColorStop(1,'#1c88c4');
+  ctx.fillStyle=pg; rr(C5.px-C5.pw/2,H-96,C5.pw,9,4.5); ctx.fill(); ctx.restore();
+  ctx.fillStyle='rgba(226,244,255,.7)'; rr(C5.px-C5.pw/2+3,H-95,C5.pw-6,2.5,1.2); ctx.fill();
   if(!kissing)drawAvatar('her',C5.px,H-96,44,false,1,1);
   if(b.stuck){ ctx.textAlign='center'; ctx.font="700 13px 'Chakra Petch',sans-serif";
     ctx.fillStyle='#9fb2cd'; ctx.fillText('PULSA LANZAR', W/2, H-140); ctx.textAlign='left'; }
@@ -1038,16 +1151,25 @@ function pongDraw(){
   ctx.font="700 11px 'Chakra Petch',sans-serif"; ctx.fillStyle='#9fb2cd';
   ctx.fillText('PRIMERO A '+C6.target, W/2, H/2+34); ctx.textAlign='left';
   // paletas
-  ctx.fillStyle='rgba(232,121,200,.85)'; rr(C6.ex-C6.pw/2,C6.ey,C6.pw,9,4.5); ctx.fill();
-  ctx.fillStyle='rgba(56,189,248,.85)'; rr(C6.px-C6.pw/2,C6.py,C6.pw,9,4.5); ctx.fill();
+  ctx.save(); ctx.shadowColor='rgba(232,121,200,.9)'; ctx.shadowBlur=14;
+  ctx.fillStyle='#e879c8'; rr(C6.ex-C6.pw/2,C6.ey,C6.pw,9,4.5); ctx.fill();
+  ctx.shadowColor='rgba(56,189,248,.9)';
+  ctx.fillStyle='#5cc8f5'; rr(C6.px-C6.pw/2,C6.py,C6.pw,9,4.5); ctx.fill(); ctx.restore();
   if(!kissing){
     drawAvatar('him',C6.ex,C6.ey,54,false,1,1);
     drawAvatar('her',C6.px,C6.py,46,false,1,1);
   }
   const b=C6.ball;
-  ctx.save(); ctx.globalAlpha=.3; ctx.fillStyle='#f4b942';
-  ctx.beginPath();ctx.arc(b.x,b.y,14,0,7);ctx.fill(); ctx.restore();
-  ctx.fillStyle='#ffe0a3'; ctx.beginPath();ctx.arc(b.x,b.y,7.5,0,7);ctx.fill();
+  C6.trail=C6.trail||[];
+  if(b.wait<=0){ C6.trail.push({x:b.x,y:b.y}); if(C6.trail.length>10)C6.trail.shift(); }
+  for(let i=0;i<C6.trail.length;i++){ const t=C6.trail[i], a=(i+1)/C6.trail.length;
+    ctx.globalAlpha=a*0.3; ctx.fillStyle='#f4b942';
+    ctx.beginPath();ctx.arc(t.x,t.y,7.5*a,0,7);ctx.fill(); }
+  ctx.globalAlpha=1;
+  ctx.save(); ctx.shadowColor='rgba(244,185,66,.95)'; ctx.shadowBlur=20;
+  const bg2=ctx.createRadialGradient(b.x-2,b.y-2,1,b.x,b.y,8);
+  bg2.addColorStop(0,'#fff8e4'); bg2.addColorStop(1,'#f0b234');
+  ctx.fillStyle=bg2; ctx.beginPath();ctx.arc(b.x,b.y,8,0,7);ctx.fill(); ctx.restore();
   if(b.wait>0){ ctx.textAlign='center'; ctx.font="700 14px 'Chakra Petch',sans-serif";
     ctx.fillStyle='#f4b942'; ctx.fillText(Math.ceil(b.wait/17), b.x, b.y-22); ctx.textAlign='left'; }
 }
@@ -1079,7 +1201,7 @@ const GAMES=[
 /* ==========================================================
    Progreso: 3 dificultades por juego, desbloqueo secuencial
    ========================================================== */
-const DIFFS=[{n:'FÁCIL',c:'#4ade80'},{n:'NORMAL',c:'#f4b942'},{n:'DIFÍCIL',c:'#ff6b8a'}];
+const DIFFS=[{n:'FÁCIL',c:'#4ade80'},{n:'DIFÍCIL',c:'#f4b942'},{n:'SUPER DIFÍCIL',c:'#ff5a7a'}];
 let diff=0;
 let prog;
 try{ prog=JSON.parse(ls.get(K.prog,"null")); }catch(e){ prog=null; }
@@ -1096,34 +1218,78 @@ function nextDiffFor(i){ for(let d=0;d<3;d++) if(!prog[i][d]&&diffUnlocked(i,d))
   for(let d=2;d>=0;d--) if(diffUnlocked(i,d)) return d; return 0; }
 
 
+
+/* ---------- Utilidades de render avanzadas ---------- */
+function glow(color,blur,fn){ ctx.save(); ctx.shadowColor=color; ctx.shadowBlur=blur; fn(); ctx.restore(); }
+function vignette(){
+  const g=ctx.createRadialGradient(W/2,H*0.45,H*0.24,W/2,H*0.5,H*0.78);
+  g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.55)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+}
+function scanlines(){
+  ctx.save(); ctx.globalAlpha=.05; ctx.fillStyle='#0b1424';
+  for(let y=0;y<H;y+=3) ctx.fillRect(0,y,W,1);
+  ctx.restore();
+}
+/* Estrellas con parallax en dos capas */
+const STARS=[];
+for(let i=0;i<70;i++)STARS.push({x:Math.random()*448,y:Math.random()*640,
+  s:Math.random()<0.3?2:1, sp:Math.random()<0.3?0.22:0.09, tw:Math.random()*6.28});
+function starfield(){
+  for(const st of STARS){
+    st.y+=st.sp; if(st.y>H)st.y-=H;
+    const a=0.18+0.34*Math.abs(Math.sin(tick*0.03+st.tw));
+    ctx.globalAlpha=a; ctx.fillStyle=st.s>1?'#cfe9ff':'#8fb6e0';
+    ctx.fillRect(st.x,st.y,st.s,st.s);
+  }
+  ctx.globalAlpha=1;
+}
+/* Panel de fondo con profundidad */
+function bgDeep(c1,c2,accent){
+  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,c1); g.addColorStop(1,c2);
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  const r=ctx.createRadialGradient(W*0.5,-40,20,W*0.5,H*0.4,H*0.8);
+  r.addColorStop(0,accent||'rgba(56,189,248,.13)'); r.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=r; ctx.fillRect(0,0,W,H);
+}
 /* ---------- Fondos compartidos ---------- */
 function bgGrid(c1,c2){
-  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,c1); g.addColorStop(1,c2);
-  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle='rgba(160,195,240,.05)'; ctx.lineWidth=1;
-  for(let y=40;y<H;y+=30){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke(); }
+  bgDeep(c1,c2);
+  // rejilla con desvanecido en profundidad
+  for(let y=40;y<H;y+=30){
+    ctx.strokeStyle='rgba(160,195,240,'+(0.02+0.05*(1-y/H))+')'; ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke(); }
+  ctx.strokeStyle='rgba(160,195,240,.035)';
   for(let x=0;x<W;x+=30){ ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke(); }
+  starfield();
 }
 function bgStars(c1,c2){
-  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,c1); g.addColorStop(1,c2);
-  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='#ffffff';
-  for(let i=0;i<46;i++){ const x=(i*97+13)%W, y=((i*53+7)+tick*0.25)%H;
-    ctx.globalAlpha=0.12+0.16*((i*7)%3); ctx.fillRect(x,y,2,2); }
-  ctx.globalAlpha=1;
+  bgDeep(c1,c2,'rgba(232,121,200,.10)');
+  starfield();
+  // nebulosa lejana
+  ctx.save(); ctx.globalAlpha=.16;
+  const n=ctx.createRadialGradient(W*0.72,H*0.24,10,W*0.72,H*0.24,180);
+  n.addColorStop(0,'#7a4bd0'); n.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=n; ctx.fillRect(0,0,W,H); ctx.restore();
 }
 function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y);
   ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
   ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function drawCoin(x,y,t){ const w=Math.abs(Math.cos(t*0.08));
   ctx.save(); ctx.translate(x,y);
-  ctx.fillStyle='#f4b942'; ctx.beginPath();ctx.ellipse(0,0,2.5+6*w,9,0,0,7);ctx.fill();
-  ctx.strokeStyle='#a87a1c'; ctx.lineWidth=1.4; ctx.stroke();
-  if(w>0.45){ ctx.fillStyle='#ffe0a3'; ctx.beginPath();ctx.ellipse(0,0,1+3*w,5,0,0,7);ctx.fill(); }
+  ctx.shadowColor='rgba(244,185,66,.85)'; ctx.shadowBlur=14;
+  const g=ctx.createLinearGradient(0,-9,0,9);
+  g.addColorStop(0,'#ffe9b8'); g.addColorStop(.5,'#f4b942'); g.addColorStop(1,'#b8801f');
+  ctx.fillStyle=g; ctx.beginPath();ctx.ellipse(0,0,2.5+6*w,9,0,0,7);ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='#8a6014'; ctx.lineWidth=1.3; ctx.stroke();
+  if(w>0.42){ ctx.fillStyle='rgba(255,244,214,.85)'; ctx.beginPath();ctx.ellipse(-0.6,-1.4,1+2.6*w,4,0,0,7);ctx.fill(); }
   ctx.restore(); }
 function drawOrb(x,y,r,spin){
   ctx.save(); ctx.translate(x,y);
-  ctx.globalAlpha=.28; ctx.fillStyle='#38bdf8'; ctx.beginPath();ctx.arc(0,0,r+6,0,7);ctx.fill(); ctx.globalAlpha=1;
+  ctx.shadowColor='rgba(56,189,248,.9)'; ctx.shadowBlur=16;
+  ctx.globalAlpha=.3; ctx.fillStyle='#38bdf8'; ctx.beginPath();ctx.arc(0,0,r+6,0,7);ctx.fill();
+  ctx.globalAlpha=1; ctx.shadowBlur=8;
   const g=ctx.createRadialGradient(-r*0.3,-r*0.3,1,0,0,r);
   g.addColorStop(0,'#eafaff'); g.addColorStop(.5,'#5cc8f5'); g.addColorStop(1,'#0b6fa8');
   ctx.fillStyle=g; ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.fill();
@@ -1207,30 +1373,51 @@ function kissDraw(){
   ctx.restore(); ctx.textAlign='left';
 }
 function awardWin(){
-  kissing=false; cards.ella++; total.ella++; saveTotal(); updateHud();
+  kissing=false;
   const first=!prog[mode][diff];
   prog[mode][diff]=true; saveProg(); renderGameList();
-  const fav=pick(ELLA,bagE);
-  document.getElementById('winText').textContent=fav;
-  document.getElementById('winSub').innerHTML='Ganó <b>'+GAMES[mode].name+'</b> en <b style="color:'
-    +DIFFS[diff].c+'">'+DIFFS[diff].n+'</b>. Carta a favor de <b style="color:var(--magenta)">ella</b>:';
-  document.getElementById('winTally').textContent="💖 "+cards.ella+" · 💙 "+cards.el;
-  const nb=document.getElementById('nextBtn'), ns=document.getElementById('nextSub');
-  let msg='';
-  if(first&&diff<2){ msg='Desbloqueado: '+DIFFS[diff+1].n+' 🔓'; }
-  else if(first&&diff===2){
-    msg=(mode<GAMES.length-1)?('¡'+GAMES[mode].name+' completo! Desbloqueado: '+GAMES[mode+1].name+' '+GAMES[mode+1].icon+' 🔓')
-                             :'¡Arcade completo! 🏆';
+  const complete=gameDone(mode);
+  A.sfx('win');
+  if(complete&&first){
+    /* --- PREMIO: superó los 3 niveles del juego --- */
+    cards.ella++; total.ella++; saveTotal(); updateHud();
+    const premio=pick(ELLA,bagE);
+    document.getElementById('prizeGame').textContent=GAMES[mode].name;
+    document.getElementById('prizeText').textContent=premio;
+    document.getElementById('prizeTally').textContent="Premios ganados: "+total.ella;
+    const nb=document.getElementById('prizeBtn'), ns=document.getElementById('prizeNext');
+    if(mode<GAMES.length-1){ ns.textContent='Desbloqueado: '+GAMES[mode+1].name+' '+GAMES[mode+1].icon;
+      nb.textContent='Jugar '+GAMES[mode+1].name; }
+    else { ns.textContent='¡Arcade completo! Los 6 juegos superados 🏆'; nb.textContent='Volver al menú'; }
+    prizeConfetti=90;
+    state="prize"; show('prizeScreen'); return;
   }
-  ns.textContent=msg;
-  if(diff<2){ nb.textContent='Jugar '+DIFFS[diff+1].n; }
-  else if(mode<GAMES.length-1&&gameDone(mode)){ nb.textContent='Jugar '+GAMES[mode+1].name; }
-  else { nb.textContent='Volver al menú'; }
-  state="win"; show('winScreen');
+  /* --- Nivel superado, aún sin premio --- */
+  const doneN=prog[mode].filter(Boolean).length;
+  document.getElementById('lvlTitle').textContent='Nivel superado';
+  document.getElementById('lvlSub').innerHTML='<b>'+GAMES[mode].name+'</b> · '
+    +'<b style="color:'+DIFFS[diff].c+'">'+DIFFS[diff].n+'</b>';
+  const dots=document.getElementById('lvlDots'); dots.innerHTML='';
+  for(let d=0;d<3;d++){ const el=document.createElement('div');
+    el.className='lvlpip'+(prog[mode][d]?' on':'');
+    el.innerHTML='<span>'+DIFFS[d].n+'</span>'; dots.appendChild(el); }
+  const falta=3-doneN;
+  document.getElementById('lvlMsg').textContent = falta>0
+    ? ('Gana '+falta+(falta===1?' nivel más':' niveles más')+' para desbloquear el PREMIO')
+    : 'Premio disponible';
+  const nb=document.getElementById('lvlBtn');
+  const nd=nextDiffFor(mode);
+  nb.textContent = prog[mode][nd]&&doneN>=3 ? 'Continuar' : ('Jugar '+DIFFS[nd].n);
+  state="level"; show('levelScreen');
 }
 function nextStep(){
-  if(diff<2){ startGame(mode,diff+1,tourney); }
-  else if(mode<GAMES.length-1&&gameDone(mode)){ startGame(mode+1,0,tourney); }
+  if(state==='prize'){
+    if(mode<GAMES.length-1&&gameDone(mode)){ startGame(mode+1,0,tourney); }
+    else { state="menu"; A.music(false); show('startScreen'); }
+    return;
+  }
+  const nd=nextDiffFor(mode);
+  if(!gameDone(mode)){ startGame(mode,nd,tourney); }
   else { state="menu"; A.music(false); show('startScreen'); }
 }
 /* ---------- HUD / pantallas ---------- */
@@ -1244,10 +1431,10 @@ function updateHud(){
   document.getElementById('cEl').textContent=cards.el;
 }
 function updateScore(){ document.getElementById('score').textContent=scoreShown; }
-const screens=['startScreen','diffScreen','peniScreen','winScreen','overScreen','pauseScreen','editScreen'];
+const screens=['startScreen','diffScreen','peniScreen','levelScreen','prizeScreen','overScreen','pauseScreen','editScreen'];
 function hideAll(){ screens.forEach(s=>document.getElementById(s).classList.add('hidden')); }
 function show(id){ hideAll(); document.getElementById(id).classList.remove('hidden');
-  if(id==='startScreen'){ document.getElementById('totLine').innerHTML='Historial · 💖 '+total.ella+' &nbsp; 💙 '+total.el; } }
+  if(id==='startScreen'){ document.getElementById('totLine').innerHTML='Premios de ella: <b>'+total.ella+'</b> &nbsp;·&nbsp; Penitencias: <b>'+total.el+'</b>'; } }
 function togglePause(){
   if(state==='play'){ state='pause'; A.music(false); show('pauseScreen'); }
   else if(state==='pause'){ state='play'; hideAll(); if(!A.muted)A.music(true); }
@@ -1305,7 +1492,10 @@ document.getElementById('startBtn').onclick=()=>{
 document.getElementById('retryBtn').onclick=()=>startGame(mode,diff,tourney);
 document.getElementById('menuBtn').onclick=()=>{state='menu';A.music(false);show('startScreen');};
 document.getElementById('continueBtn').onclick=restartLevel;
-document.getElementById('nextBtn').onclick=nextStep;
+document.getElementById('lvlBtn').onclick=nextStep;
+document.getElementById('prizeBtn').onclick=nextStep;
+document.getElementById('lvlMenu').onclick=()=>{state='menu';A.music(false);show('startScreen');};
+document.getElementById('prizeMenu').onclick=()=>{state='menu';A.music(false);show('startScreen');};
 document.getElementById('resumeBtn').onclick=togglePause;
 document.getElementById('pauseBtn').onclick=togglePause;
 document.getElementById('quitBtn').onclick=()=>{state='menu';A.music(false);show('startScreen');};
@@ -1328,6 +1518,11 @@ function update(){
   if(shake>0)shake*=0.86; if(flashT>0)flashT--;
   if(scoreShown<score)scoreShown=Math.min(score,scoreShown+Math.ceil((score-scoreShown)/6));
   updateScore();
+  if(prizeConfetti>0){ prizeConfetti--;
+    if(prizeConfetti%2===0) parts.push({x:Math.random()*W,y:-8,vx:(Math.random()-.5)*1.6,
+      vy:1.4+Math.random()*1.8,life:150,color:['#ffd678','#f4b942','#e879c8','#fff3d0'][(Math.random()*4)|0],g:0.012,conf:true}); }
+  if(parts.length){ for(const q of parts){ if(!q.conf)continue; q.x+=q.vx; q.y+=q.vy; q.vy+=q.g; q.life--; } }
+  if(state==='prize'||state==='level'){ parts=parts.filter(q=>q.life>0&&q.y<H+20); actEdge=false; return; }
   if(state==='kiss'){ kissUpdate(); actEdge=false; return; }
   if(state!=='play'){ actEdge=false; return; }
   if(freeze>0){ freeze--; actEdge=false; return; }
@@ -1349,7 +1544,12 @@ function draw(){
     ctx.beginPath(); ctx.moveTo(0,4); ctx.bezierCurveTo(-8,-6,-13,3,0,13); ctx.bezierCurveTo(13,3,8,-6,0,4); ctx.fill();
     ctx.restore(); }
   ctx.globalAlpha=1;
+  for(const q of parts){ if(!q.conf)continue;
+    ctx.save(); ctx.globalAlpha=Math.min(1,q.life/40); ctx.fillStyle=q.color;
+    ctx.translate(q.x,q.y); ctx.rotate(q.life*0.12); ctx.fillRect(-3,-5,6,10); ctx.restore(); }
+  ctx.globalAlpha=1;
   if(state!=='menu')fxDraw();
+  vignette(); scanlines();
   ctx.restore();
   document.getElementById('flash').style.opacity=flashT>0?(flashT/18*0.85):0;
 }
