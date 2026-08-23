@@ -236,7 +236,7 @@
           <div class="face her"><div class="ring" id="ringHero"></div><label>Cambiar<input type="file" id="fileHero" accept="image/*"></label></div>
           <div class="face him"><div class="ring" id="ringBoss"></div><label>Cambiar<input type="file" id="fileBoss" accept="image/*"></label></div>
         </div>
-        <p class="hint">6 juegos clásicos · 3 niveles cada uno.<br>Completa los <b>3 niveles</b> de un juego y ella gana un <b style="color:var(--amber)">PREMIO</b> 🎁. Si pierde, él gana una <b style="color:var(--cyan)">penitencia</b>.</p>
+        <p class="hint">8 juegos clásicos · 3 niveles cada uno.<br>Completa los <b>3 niveles</b> de un juego y ella gana un <b style="color:var(--amber)">PREMIO</b> 🎁. Si pierde, él gana una <b style="color:var(--cyan)">penitencia</b>.</p>
         <div class="games" id="gameList"></div>
         <p class="hint" id="totLine">Premios de ella: <b>0</b> &nbsp;·&nbsp; Penitencias: <b>0</b></p>
         <button class="btn" id="startBtn">Torneo completo</button>
@@ -757,7 +757,16 @@ function fxDraw(){
 /* ---------- Entrada ---------- */
 const keys={left:false,right:false,up:false,down:false,act:false};
 let actEdge=false;   // pulso de acción (para disparar)
-function setKey(k,v){ if(k==='act'&&v&&!keys.act)actEdge=true; keys[k]=v; }
+/* pulso de dirección: se activa al tocar, no al mantener.
+   Lo usan los juegos con controles discretos (cursor, carril). */
+const edge={left:false,right:false,up:false,down:false};
+function setKey(k,v){
+  if(v&&!keys[k]){ if(k==='act')actEdge=true; else if(k in edge)edge[k]=true; }
+  keys[k]=v;
+}
+/* toque o repeticion al mantener */
+function tapped(k,heldOk){ return edge[k]||(heldOk&&keys[k]); }
+function clearEdges(){ edge.left=edge.right=edge.up=edge.down=false; }
 window.addEventListener('keydown',e=>{
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' ','p','P'].includes(e.key))e.preventDefault();
   if(e.repeat)return;
@@ -1580,6 +1589,404 @@ function pongDraw(){
     ctx.fillStyle='#f4b942'; ctx.fillText(Math.ceil(b.wait/17), b.x, b.y-22); ctx.textAlign='left'; }
 }
 
+
+/* ==========================================================
+   JUEGO 7 — CARRERA (carritos: gánale la carrera)
+   ========================================================== */
+const C7={};
+function raceInit(){
+  const D=diff;
+  C7.lanes=[0.22,0.40,0.60,0.78].map(f=>Math.round(W*f));
+  C7.lane=1;                       // carril actual
+  C7.px=C7.lanes[1];
+  C7.py=H-96;
+  C7.spd=0;                        // velocidad actual (px de avance por frame)
+  C7.base=[3.4,4.0,4.6][D];        // crucero
+  C7.max=[6.2,7.0,7.8][D];
+  C7.turbo=0; C7.fuel=100;
+  C7.dist=0; C7.goal=[2600,3200,3800][D];
+  C7.rivalDist=0;
+  C7.rivalSpd=[3.2,3.95,4.62][D];  // el va casi a tu crucero
+  C7.rivalLane=2; C7.rivalX=C7.lanes[2]; C7.rivalY=H-260;
+  C7.obs=[]; C7.spawn=0; C7.every=[52,42,34][D];
+  C7.boosts=[]; C7.bspawn=0;
+  C7.scroll=0; C7.inv=90; C7.shakeSteer=0;
+  C7.crashCool=0;
+  C7.ready=90;
+}
+function raceUpdate(){
+  const D=diff;
+  if(C7.ready>0){ C7.ready--; if(C7.ready===0)A.sfx('blip'); return; }
+  if(C7.inv>0)C7.inv--;
+  if(C7.crashCool>0)C7.crashCool--;
+
+  /* --- conducir --- */
+  /* cambio de carril con pequeño enfriamiento */
+  C7.steer=(C7.steer||0); if(C7.steer>0)C7.steer--;
+  const puede=(C7.steer===0);
+  if(tapped('left',puede)&&C7.lane>0){ C7.lane--; C7.steer=10; A.sfx('blip'); C7.shakeSteer=-1; }
+  else if(tapped('right',puede)&&C7.lane<C7.lanes.length-1){ C7.lane++; C7.steer=10; A.sfx('blip'); C7.shakeSteer=1; }
+  C7.px+=(C7.lanes[C7.lane]-C7.px)*0.22;
+  C7.shakeSteer*=0.88;
+
+  /* --- turbo --- */
+  if(keys.act&&C7.fuel>0&&C7.crashCool<=0){
+    C7.turbo=8; C7.fuel=Math.max(0,C7.fuel-0.9);
+    if(tick%4===0)addParts(C7.px,C7.py+26,'#38bdf8',2,1.2);
+  } else { C7.turbo=Math.max(0,C7.turbo-1); C7.fuel=Math.min(100,C7.fuel+0.22); }
+
+  const objetivo=(C7.turbo>0?C7.max:C7.base)*(C7.crashCool>0?0.45:1);
+  C7.spd+=(objetivo-C7.spd)*0.12;
+  C7.dist+=C7.spd; C7.scroll+=C7.spd;
+  C7.rivalDist+=C7.rivalSpd;
+
+  /* el rival se dibuja adelante o atras segun quien va ganando */
+  const gap=(C7.rivalDist-C7.dist);
+  C7.rivalY=H-96-gap*0.55;
+  if(C7.rivalY<-70)C7.rivalY=-70;
+  if(C7.rivalY>H+70)C7.rivalY=H+70;
+  C7.rivalX+=(C7.lanes[C7.rivalLane]-C7.rivalX)*0.1;
+  if(tick%70===0)C7.rivalLane=Math.max(0,Math.min(3,C7.rivalLane+(Math.random()<0.5?-1:1)));
+
+  /* --- obstaculos --- */
+  C7.spawn++;
+  if(C7.spawn>=C7.every){ C7.spawn=0;
+    const l=(Math.random()*C7.lanes.length)|0;
+    const tipo=Math.random()<0.34?'aceite':'cono';
+    C7.obs.push({lane:l,x:C7.lanes[l],y:-40,tipo});
+  }
+  C7.bspawn++;
+  if(C7.bspawn>150){ C7.bspawn=0;
+    const l=(Math.random()*C7.lanes.length)|0;
+    C7.boosts.push({x:C7.lanes[l],y:-40});
+  }
+  for(const o of C7.obs){ o.y+=C7.spd;
+    if(o.y>H+40)o.dead=true;
+    if(!o.dead&&C7.inv<=0&&C7.crashCool<=0&&Math.abs(o.x-C7.px)<34&&Math.abs(o.y-C7.py)<34){
+      o.dead=true;
+      if(o.tipo==='aceite'){ C7.crashCool=42; C7.spd*=0.55; shake=6; A.sfx('hit');
+        addPop(C7.px,C7.py-30,"¡DERRAPE!",'#ff6b8a'); addParts(C7.px,C7.py,'#7a6a44',12,1.6); }
+      else { shake=10; freeze=6; A.sfx('boom'); addParts(C7.px,C7.py,'#ff6b8a',16,1.9);
+        return hit(); }
+    }
+  }
+  C7.obs=C7.obs.filter(o=>!o.dead);
+  for(const bst of C7.boosts){ bst.y+=C7.spd;
+    if(bst.y>H+40)bst.dead=true;
+    if(!bst.dead&&Math.abs(bst.x-C7.px)<32&&Math.abs(bst.y-C7.py)<32){
+      bst.dead=true; C7.fuel=Math.min(100,C7.fuel+38); C7.turbo=26;
+      addScore(25,bst.x,bst.y-16,"¡NITRO!",'#38bdf8'); A.sfx('coin'); }
+  }
+  C7.boosts=C7.boosts.filter(b=>!b.dead);
+
+  /* --- meta --- */
+  if(C7.dist>=C7.goal){ addScore(150,W/2,H/2,"¡GANASTE!",'#4ade80'); return winGame(); }
+  if(C7.rivalDist>=C7.goal){ addPop(W/2,H/2,"Él cruzó primero",'#38bdf8'); A.sfx('hit'); return hit(); }
+}
+function drawKart(x,y,slot,tilt,scale){
+  scale=scale||1;
+  const w=42*scale, h=30*scale;
+  ctx.save(); ctx.translate(x,y); ctx.rotate((tilt||0)*0.06);
+  /* sombra */
+  ctx.fillStyle='rgba(0,0,0,.45)'; ctx.beginPath();ctx.ellipse(0,h*0.42,w*0.5,h*0.2,0,0,7);ctx.fill();
+  /* ruedas */
+  ctx.fillStyle='#12161d';
+  rr(-w*0.56,-h*0.30,w*0.22,h*0.34,3); ctx.fill();
+  rr(w*0.34,-h*0.30,w*0.22,h*0.34,3); ctx.fill();
+  rr(-w*0.56,h*0.02,w*0.22,h*0.34,3); ctx.fill();
+  rr(w*0.34,h*0.02,w*0.22,h*0.34,3); ctx.fill();
+  /* chasis */
+  const col = slot==='her' ? ['#ff8fd0','#c4358f'] : ['#8fd9ff','#1c88c4'];
+  const g=ctx.createLinearGradient(0,-h*0.4,0,h*0.4);
+  g.addColorStop(0,col[0]); g.addColorStop(1,col[1]);
+  ctx.fillStyle=g; ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=1.4;
+  rr(-w*0.42,-h*0.42,w*0.84,h*0.84,7); ctx.fill(); ctx.stroke();
+  /* alerón */
+  ctx.fillStyle=col[1]; rr(-w*0.46,h*0.26,w*0.92,h*0.16,3); ctx.fill();
+  ctx.restore();
+  /* piloto encima */
+  drawAvatar(slot,x,y+4*scale,34*scale,false,1,1);
+}
+function raceDraw(){
+  /* --- carretera --- */
+  bgDeep('#101c30','#05080f','rgba(56,189,248,.10)');
+  const roadL=W*0.12, roadR=W*0.88;
+  ctx.fillStyle='#141d2c'; ctx.fillRect(roadL,0,roadR-roadL,H);
+  /* bordes */
+  ctx.save(); ctx.shadowColor='rgba(56,189,248,.8)'; ctx.shadowBlur=10;
+  ctx.strokeStyle='#38bdf8'; ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(roadL,0);ctx.lineTo(roadL,H);ctx.moveTo(roadR,0);ctx.lineTo(roadR,H);ctx.stroke();
+  ctx.restore();
+  /* lineas de carril */
+  ctx.strokeStyle='rgba(200,225,255,.22)'; ctx.lineWidth=2; ctx.setLineDash([18,22]);
+  const off=(C7.scroll%40);
+  for(let i=1;i<C7.lanes.length;i++){
+    const x=(C7.lanes[i-1]+C7.lanes[i])/2;
+    ctx.beginPath();ctx.moveTo(x,-40+off);ctx.lineTo(x,H);ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  /* postes laterales que pasan */
+  for(let i=0;i<9;i++){
+    const y=((i*90)+(C7.scroll*1.2))%(H+90)-45;
+    ctx.fillStyle='rgba(244,185,66,.55)';
+    ctx.fillRect(roadL-13,y,7,22); ctx.fillRect(roadR+6,y,7,22);
+  }
+  /* meta cuando se acerca */
+  const rest=C7.goal-C7.dist;
+  if(rest<600){
+    const my=H-96-rest*0.55;
+    for(let i=0;i<10;i++){
+      ctx.fillStyle=(i%2)?'#eef4ff':'#12161d';
+      ctx.fillRect(roadL+i*((roadR-roadL)/10),my-14,(roadR-roadL)/10,14);
+      ctx.fillStyle=(i%2)?'#12161d':'#eef4ff';
+      ctx.fillRect(roadL+i*((roadR-roadL)/10),my,(roadR-roadL)/10,14);
+    }
+  }
+  /* obstaculos */
+  for(const o of C7.obs){
+    if(o.tipo==='aceite'){
+      ctx.save(); ctx.globalAlpha=.85; ctx.fillStyle='#2a2440';
+      ctx.beginPath();ctx.ellipse(o.x,o.y,26,13,0,0,7);ctx.fill();
+      ctx.globalAlpha=.5; ctx.fillStyle='#6a5ad0';
+      ctx.beginPath();ctx.ellipse(o.x-5,o.y-3,11,6,0,0,7);ctx.fill(); ctx.restore();
+    } else {
+      ctx.save(); ctx.translate(o.x,o.y);
+      ctx.fillStyle='#ff7a3d'; ctx.beginPath();
+      ctx.moveTo(0,-17);ctx.lineTo(13,14);ctx.lineTo(-13,14);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#fff'; ctx.fillRect(-9,-2,18,5);
+      ctx.restore();
+    }
+  }
+  /* nitro */
+  for(const bst of C7.boosts){
+    const s=1+Math.sin(tick*0.2)*0.12;
+    ctx.save(); ctx.translate(bst.x,bst.y); ctx.scale(s,s);
+    ctx.shadowColor='rgba(56,189,248,.9)'; ctx.shadowBlur=16;
+    ctx.fillStyle='#38bdf8';
+    ctx.beginPath();ctx.moveTo(0,-16);ctx.lineTo(9,2);ctx.lineTo(2,2);ctx.lineTo(4,16);
+    ctx.lineTo(-9,-2);ctx.lineTo(-2,-2);ctx.closePath();ctx.fill(); ctx.restore();
+  }
+  /* rival y jugadora */
+  if(!kissing){
+    drawKart(C7.rivalX,C7.rivalY,'him',0,1);
+    const blink=(C7.inv>0&&Math.floor(C7.inv/4)%2===0);
+    ctx.save(); if(blink)ctx.globalAlpha=.5;
+    if(C7.turbo>0){ ctx.save(); ctx.globalAlpha=.55;
+      const fg=ctx.createLinearGradient(0,C7.py+16,0,C7.py+58);
+      fg.addColorStop(0,'#8fd9ff'); fg.addColorStop(1,'rgba(56,189,248,0)');
+      ctx.fillStyle=fg; ctx.fillRect(C7.px-9,C7.py+16,18,42); ctx.restore(); }
+    drawKart(C7.px,C7.py,'her',C7.shakeSteer,1);
+    ctx.restore();
+  }
+  /* --- HUD de carrera --- */
+  const bx=14, by=70, bh=H-160;
+  ctx.fillStyle='rgba(10,18,32,.7)'; rr(bx,by,7,bh,3.5); ctx.fill();
+  const fy=(d)=>by+bh-(Math.min(1,d/C7.goal))*bh;
+  ctx.fillStyle='#38bdf8'; ctx.beginPath();ctx.arc(bx+3.5,fy(C7.rivalDist),5,0,7);ctx.fill();
+  ctx.fillStyle='#e879c8'; ctx.beginPath();ctx.arc(bx+3.5,fy(C7.dist),6,0,7);ctx.fill();
+  ctx.fillStyle='rgba(244,185,66,.9)'; ctx.fillRect(bx-3,by-2,13,3);
+  /* nitro */
+  const nx=W-24, nh=bh;
+  ctx.fillStyle='rgba(10,18,32,.7)'; rr(nx,by,8,nh,4); ctx.fill();
+  ctx.fillStyle=C7.fuel>25?'#4ade80':'#ff6b8a';
+  rr(nx,by+nh*(1-C7.fuel/100),8,nh*(C7.fuel/100),4); ctx.fill();
+  ctx.textAlign='center'; ctx.font="700 9px 'Chakra Petch',sans-serif"; ctx.fillStyle='#9fb2cd';
+  ctx.fillText('NITRO',nx+4,by-6);
+  /* posicion */
+  ctx.font="700 13px 'Chakra Petch',sans-serif";
+  const gana=C7.dist>=C7.rivalDist;
+  ctx.fillStyle=gana?'#4ade80':'#ff6b8a';
+  ctx.fillText(gana?'VAS 1ª':'VA ÉL 1º', W/2, 44);
+  ctx.font="700 10px 'Chakra Petch',sans-serif"; ctx.fillStyle='#9fb2cd';
+  ctx.fillText('META EN '+Math.max(0,Math.round((C7.goal-C7.dist)/10))+' m', W/2, 60);
+  if(C7.ready>0){ ctx.font="700 24px 'Chakra Petch',sans-serif"; ctx.fillStyle='#f4b942';
+    ctx.fillText(C7.ready>60?'3':C7.ready>30?'2':'1', W/2, H/2); }
+  if(C7.crashCool>0){ ctx.font="700 14px 'Chakra Petch',sans-serif"; ctx.fillStyle='#ff9ad4';
+    ctx.fillText('SIN CONTROL', W/2, C7.py-46); }
+  ctx.textAlign='left';
+}
+
+/* ==========================================================
+   JUEGO 8 — CÓDIGO (pensamiento lógico, estilo Mastermind)
+   El guarda un código secreto; ella lo deduce por descarte.
+   ========================================================== */
+const C8={};
+const SYM=[
+  {ch:'♥', col:'#ff5f8f'},
+  {ch:'★', col:'#f4b942'},
+  {ch:'●', col:'#4cd8f7'},
+  {ch:'▲', col:'#4ade80'},
+  {ch:'■', col:'#c98bff'},
+  {ch:'✦', col:'#ff9a5c'}
+];
+function codeInit(){
+  const D=diff;
+  C8.slots=[3,4,5][D];
+  C8.nsym=[4,5,6][D];
+  C8.maxTries=[10,9,8][D];
+  /* codigo secreto (puede repetir simbolos) */
+  C8.secret=[];
+  for(let i=0;i<C8.slots;i++)C8.secret.push((Math.random()*C8.nsym)|0);
+  C8.guess=new Array(C8.slots).fill(0);
+  C8.cursor=0;
+  C8.tries=[];             // {g:[...], exact:n, partial:n}
+  C8.cd=0; C8.solved=false;
+  C8.reveal=0;
+  C8.shakeRow=0;
+  C8.hintUsed=false;
+}
+/* Cuenta aciertos exactos y simbolos correctos en mal sitio */
+function scoreGuess(g,secret){
+  const n=g.length;
+  let exact=0;
+  const restG=[], restS=[];
+  for(let i=0;i<n;i++){
+    if(g[i]===secret[i])exact++;
+    else { restG.push(g[i]); restS.push(secret[i]); }
+  }
+  let partial=0;
+  const used=new Array(restS.length).fill(false);
+  for(const v of restG){
+    for(let j=0;j<restS.length;j++){
+      if(!used[j]&&restS[j]===v){ used[j]=true; partial++; break; }
+    }
+  }
+  return {exact,partial};
+}
+function codeUpdate(){
+  if(C8.reveal>0){ C8.reveal--; if(C8.reveal===0){ if(C8.solved)return winGame(); } return; }
+  if(C8.shakeRow>0)C8.shakeRow--;
+
+  /* mover el cursor entre casillas */
+  /* un toque mueve una vez; si mantienes, repite despacio */
+  if(C8.cd>0)C8.cd--;
+  const rep=(C8.cd===0);
+  if(tapped('left',rep)){ C8.cursor=(C8.cursor-1+C8.slots)%C8.slots; C8.cd=11; A.sfx('blip'); }
+  else if(tapped('right',rep)){ C8.cursor=(C8.cursor+1)%C8.slots; C8.cd=11; A.sfx('blip'); }
+  else if(tapped('up',rep)){ C8.guess[C8.cursor]=(C8.guess[C8.cursor]+1)%C8.nsym; C8.cd=11; A.sfx('blip'); }
+  else if(tapped('down',rep)){ C8.guess[C8.cursor]=(C8.guess[C8.cursor]-1+C8.nsym)%C8.nsym; C8.cd=11; A.sfx('blip'); }
+
+  /* confirmar intento */
+  if(actEdge){
+    const g=C8.guess.slice();
+    const r=scoreGuess(g,C8.secret);
+    C8.tries.push({g,exact:r.exact,partial:r.partial});
+    if(r.exact===C8.slots){
+      C8.solved=true; C8.reveal=80; A.sfx('win');
+      addScore(200+40*(C8.maxTries-C8.tries.length),W/2,H/2,"¡CÓDIGO ROTO!",'#4ade80');
+      addParts(W/2,H/2,'#4ade80',22,2);
+    } else {
+      A.sfx(r.exact>0?'coin':'blip'); C8.shakeRow=10;
+      addScore(10*r.exact+3*r.partial,W/2,H-118,
+        r.exact+" exactos · "+r.partial+" sueltos", r.exact>0?'#4ade80':'#9fb2cd');
+      if(C8.tries.length>=C8.maxTries){
+        C8.reveal=1; A.sfx('hit'); shake=10;
+        addPop(W/2,H/2,"Se acabaron los intentos",'#ff6b8a');
+        return hit();
+      }
+    }
+  }
+}
+function codeDraw(){
+  bgGrid('#0c1a2e','#04070f');
+  const cw=Math.min(46, Math.floor((W-70)/C8.slots));   // ancho de casilla
+  const gx=W/2-(cw*C8.slots)/2;
+
+  /* --- el guardando el codigo --- */
+  if(!kissing)drawAvatar('him',W/2-70,86,60,false,1,1);
+  /* codigo secreto: oculto o revelado */
+  const sy=54;
+  for(let i=0;i<C8.slots;i++){
+    const x=W/2-6+ i*30;
+    if(C8.solved&&C8.reveal>0){
+      const s=SYM[C8.secret[i]];
+      ctx.save(); ctx.shadowColor=s.col; ctx.shadowBlur=14;
+      ctx.fillStyle=s.col; ctx.font="700 20px 'Chakra Petch',sans-serif";
+      ctx.textAlign='center'; ctx.fillText(s.ch,x,sy+7); ctx.restore();
+    } else {
+      ctx.fillStyle='rgba(160,195,240,.10)'; rr(x-11,sy-13,22,26,6); ctx.fill();
+      ctx.strokeStyle='rgba(160,195,240,.28)'; ctx.lineWidth=1.2;
+      rr(x-11,sy-13,22,26,6); ctx.stroke();
+      ctx.fillStyle='rgba(160,195,240,.55)'; ctx.font="700 15px 'Chakra Petch',sans-serif";
+      ctx.textAlign='center'; ctx.fillText('?',x,sy+6);
+    }
+  }
+  ctx.textAlign='center'; ctx.font="700 10px 'Chakra Petch',sans-serif";
+  ctx.fillStyle='#9fb2cd'; ctx.fillText('CÓDIGO SECRETO', W/2+ (C8.slots-1)*15 -6, 26);
+
+  /* --- historial de intentos --- */
+  const top=120, rowH=Math.min(34, Math.floor((H-260)/C8.maxTries));
+  for(let t=0;t<C8.maxTries;t++){
+    const y=top+t*rowH;
+    const tr=C8.tries[t];
+    /* numero de intento */
+    ctx.textAlign='right'; ctx.font="600 10px 'JetBrains Mono',monospace";
+    ctx.fillStyle='rgba(160,195,240,.4)'; ctx.fillText((t+1),gx-10,y+rowH*0.66);
+    for(let i=0;i<C8.slots;i++){
+      const x=gx+i*cw+cw/2, cy=y+rowH*0.5;
+      const r=Math.min(cw,rowH)*0.34;
+      if(tr){
+        const s=SYM[tr.g[i]];
+        ctx.save(); ctx.shadowColor=s.col; ctx.shadowBlur=8;
+        ctx.fillStyle=s.col; ctx.font="700 "+Math.round(r*1.9)+"px 'Chakra Petch',sans-serif";
+        ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(s.ch,x,cy); ctx.restore();
+        ctx.textBaseline='alphabetic';
+      } else {
+        ctx.strokeStyle='rgba(160,195,240,.13)'; ctx.lineWidth=1;
+        ctx.beginPath();ctx.arc(x,cy,r,0,7);ctx.stroke();
+      }
+    }
+    /* pistas: exactos (verde relleno) y sueltos (aro ámbar) */
+    if(tr){
+      const px0=gx+cw*C8.slots+12;
+      for(let k=0;k<C8.slots;k++){
+        const px=px0+(k%3)*10, py=y+rowH*0.32+Math.floor(k/3)*10;
+        if(k<tr.exact){ ctx.fillStyle='#4ade80'; ctx.beginPath();ctx.arc(px,py,3.4,0,7);ctx.fill(); }
+        else if(k<tr.exact+tr.partial){ ctx.strokeStyle='#f4b942'; ctx.lineWidth=1.6;
+          ctx.beginPath();ctx.arc(px,py,3.2,0,7);ctx.stroke(); }
+      }
+    }
+  }
+
+  /* --- fila actual (la que estás componiendo) --- */
+  const by=H-108;
+  const sh=C8.shakeRow>0?Math.sin(tick*1.4)*3:0;
+  ctx.fillStyle='rgba(56,189,248,.07)'; rr(gx-8+sh,by-6,cw*C8.slots+16,52,12); ctx.fill();
+  ctx.strokeStyle='rgba(56,189,248,.35)'; ctx.lineWidth=1.3;
+  rr(gx-8+sh,by-6,cw*C8.slots+16,52,12); ctx.stroke();
+  for(let i=0;i<C8.slots;i++){
+    const x=gx+i*cw+cw/2+sh, cy=by+20;
+    const sel=(i===C8.cursor);
+    if(sel){
+      ctx.save(); ctx.globalAlpha=.35+0.25*Math.sin(tick*0.25);
+      ctx.fillStyle='#38bdf8'; rr(x-cw*0.42,cy-19,cw*0.84,38,9); ctx.fill(); ctx.restore();
+    }
+    const s=SYM[C8.guess[i]];
+    ctx.save(); ctx.shadowColor=s.col; ctx.shadowBlur=sel?16:8;
+    ctx.fillStyle=s.col; ctx.font="700 24px 'Chakra Petch',sans-serif";
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(s.ch,x,cy); ctx.restore();
+    ctx.textBaseline='alphabetic';
+    if(sel){ /* flechitas de que se puede cambiar */
+      ctx.fillStyle='rgba(190,225,255,.75)';
+      ctx.beginPath();ctx.moveTo(x,cy-26);ctx.lineTo(x-4,cy-21);ctx.lineTo(x+4,cy-21);ctx.closePath();ctx.fill();
+      ctx.beginPath();ctx.moveTo(x,cy+26);ctx.lineTo(x-4,cy+21);ctx.lineTo(x+4,cy+21);ctx.closePath();ctx.fill();
+    }
+  }
+  /* ella, al lado de su intento */
+  if(!kissing)drawAvatar('her',36,by+44,54,false,1,1);
+
+  /* --- ayudas de lectura --- */
+  ctx.textAlign='center'; ctx.font="700 10px 'Chakra Petch',sans-serif";
+  ctx.fillStyle='#9fb2cd';
+  ctx.fillText('INTENTOS '+C8.tries.length+' / '+C8.maxTries, W/2, H-44);
+  ctx.font="600 9.5px 'Outfit',sans-serif";
+  ctx.fillStyle='rgba(74,222,128,.85)';
+  ctx.fillText('● bien puesto', W/2-56, H-28);
+  ctx.fillStyle='rgba(244,185,66,.85)';
+  ctx.fillText('○ está, mal sitio', W/2+52, H-28);
+  ctx.textAlign='left';
+}
+
 /* ==========================================================
    Catálogo de juegos
    ========================================================== */
@@ -1602,6 +2009,12 @@ const GAMES=[
   {id:'pong', name:'DUELO', icon:'🏓', desc:'Gánale el duelo 5 a 0',
    vpad:false, down:false, action:false, actionLabel:'—', actIsUp:false,
    init:pongInit, update:pongUpdate, draw:pongDraw},
+  {id:'race', name:'CARRERA', icon:'🏎️', desc:'Gánale la carrera esquivando',
+   vpad:false, down:false, action:true, actionLabel:'NITRO', actIsUp:false,
+   init:raceInit, update:raceUpdate, draw:raceDraw},
+  {id:'code', name:'CÓDIGO', icon:'🧠', desc:'Deduce su código secreto',
+   vpad:true, down:true, action:true, actionLabel:'PROBAR', actIsUp:false,
+   init:codeInit, update:codeUpdate, draw:codeDraw},
 ];
 
 /* ==========================================================
@@ -1612,8 +2025,15 @@ let diff=0;
 let prog;
 try{ prog=JSON.parse(ls.get(K.prog,"null")); }catch(e){ prog=null; }
 function blankProg(){ return GAMES.map(()=>[false,false,false]); }
-if(!Array.isArray(prog)||prog.length!==GAMES.length||!prog.every(a=>Array.isArray(a)&&a.length===3))
+if(!Array.isArray(prog)||!prog.every(a=>Array.isArray(a)&&a.length===3)){
   prog=blankProg();
+} else if(prog.length!==GAMES.length){
+  /* al añadir juegos nuevos se conserva lo ya superado */
+  const antes=prog;
+  prog=blankProg();
+  for(let i=0;i<Math.min(antes.length,prog.length);i++)prog[i]=antes[i];
+  saveProg();
+}
 function saveProg(){ ls.set(K.prog,JSON.stringify(prog)); }
 function gameDone(i){ return prog[i].every(Boolean); }
 /* Un juego está desbloqueado si es el primero o el anterior está completo */
@@ -1928,13 +2348,13 @@ function update(){
     if(prizeConfetti%2===0) parts.push({x:Math.random()*W,y:-8,vx:(Math.random()-.5)*1.6,
       vy:1.4+Math.random()*1.8,life:150,color:['#ffd678','#f4b942','#e879c8','#fff3d0'][(Math.random()*4)|0],g:0.012,conf:true}); }
   if(parts.length){ for(const q of parts){ if(!q.conf)continue; q.x+=q.vx; q.y+=q.vy; q.vy+=q.g; q.life--; } }
-  if(state==='prize'||state==='level'){ parts=parts.filter(q=>q.life>0&&q.y<H+20); actEdge=false; return; }
-  if(state==='kiss'){ kissUpdate(); actEdge=false; return; }
-  if(state!=='play'){ actEdge=false; return; }
-  if(freeze>0){ freeze--; actEdge=false; return; }
+  if(state==='prize'||state==='level'){ parts=parts.filter(q=>q.life>0&&q.y<H+20); actEdge=false; clearEdges(); return; }
+  if(state==='kiss'){ kissUpdate(); actEdge=false; clearEdges(); return; }
+  if(state!=='play'){ actEdge=false; clearEdges(); return; }
+  if(freeze>0){ freeze--; actEdge=false; clearEdges(); return; }
   GAMES[mode].update();
   fxUpdate();
-  actEdge=false;
+  actEdge=false; clearEdges();
 }
 function draw(){
   ctx.save();
